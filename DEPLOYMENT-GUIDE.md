@@ -20,6 +20,7 @@ This document is a step-by-step reference for deploying the Node.js welcome app 
 12. [What to learn or build next](#12-what-to-learn-or-build-next)
 13. [Troubleshooting](#13-troubleshooting)
 14. [Legacy ConfigMap (optional)](#14-legacy-configmap-optional)
+15. [Deploying on a Linux server](#15-deploying-on-a-linux-server)
 
 ---
 
@@ -236,9 +237,10 @@ Roadmap for production or deeper learning:
 |--------|----------------|
 | `ImagePullBackOff` / image not found | Run `docker build -t construction-node-app:1.0 .` locally first; on a remote cluster, push to a registry and use the correct image reference. |
 | `CrashLoopBackOff` | `kubectl logs deployment/construction-app` — confirm the app listens on port `3000` and `/health` returns HTTP 200. |
-| `connection refused` from `kubectl` | Kubernetes not enabled or wrong context: `kubectl config use-context docker-desktop`. |
+| `connection refused` from `kubectl` | Kubernetes not enabled or wrong context: `kubectl config use-context docker-desktop` (Docker Desktop). On Linux, set `KUBECONFIG` to your cluster config (e.g. K3s `~/.kube/config` copied from `/etc/rancher/k3s/k3s.yaml`). |
 | Port forward fails | Another process may be using the local port; try another port: `kubectl port-forward svc/construction-app-svc 9090:80`. |
 | Pod stays `Pending` | `kubectl describe pod ...` — check resources and cluster capacity. |
+| **K3s / MicroK8s:** `ImagePullBackOff` for local image name | The cluster uses containerd, not Docker’s image store. After `docker build`, import the image — see **section 15.4 Path A** (K3s) or **Path B** (MicroK8s). |
 
 ---
 
@@ -249,6 +251,199 @@ There was an older nginx + `configmap.yaml` demo. The current Node Deployment **
 ```bash
 kubectl delete configmap construction-app-html --ignore-not-found
 ```
+
+---
+
+## 15. Deploying on a Linux server
+
+Examples below use **Ubuntu 22.04/24.04 LTS** (`apt`). On **RHEL / Rocky / Fedora**, use `dnf` and [Docker’s RHEL install docs](https://docs.docker.com/engine/install/rhel/) instead of `apt`.
+
+### 15.1 Get the project onto the server
+
+**Option A — Git clone (after you pushed to GitHub):**
+
+```bash
+sudo apt update && sudo apt install -y git
+git clone https://github.com/ashararsi/Kubernetes.git
+cd Kubernetes
+```
+
+**Option B — Copy the folder** with `scp` / `rsync` from your laptop:
+
+```bash
+# from your laptop (example)
+rsync -avz --exclude 'node_modules' "./files (1)/" user@YOUR_SERVER_IP:~/Kubernetes/
+ssh user@YOUR_SERVER_IP
+cd ~/Kubernetes
+```
+
+---
+
+### 15.2 Install Docker Engine (Linux)
+
+Official repo (recommended):
+
+```bash
+sudo apt update
+sudo apt install -y ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+  https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "${VERSION_CODENAME:-$VERSION_ID}") stable" \
+  | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+Add your user to the `docker` group (avoids typing `sudo docker` every time):
+
+```bash
+sudo usermod -aG docker "$USER"
+```
+
+Log out and SSH back in (or run `newgrp docker`), then verify:
+
+```bash
+docker run --rm hello-world
+```
+
+---
+
+### 15.3 Run the app with Docker only (no Kubernetes)
+
+From the project directory (where the `Dockerfile` is):
+
+```bash
+docker build -t construction-node-app:1.0 .
+docker run --rm -d --name construction-welcome -p 3000:3000 construction-node-app:1.0
+```
+
+Open **http://SERVER_PUBLIC_IP:3000** from another machine only if the firewall allows it.
+
+**UFW example (Ubuntu firewall):**
+
+```bash
+sudo ufw allow OpenSSH
+sudo ufw allow 3000/tcp comment 'construction-welcome-app'
+sudo ufw enable   # if not already enabled
+sudo ufw status
+```
+
+---
+
+### 15.4 Kubernetes on Linux — pick one path
+
+Docker Desktop does not exist on a typical Linux VPS. You either install a **lightweight cluster on the same machine** or use a **managed cluster** (EKS, GKE, AKS, etc.) and `kubectl` from the server or your laptop.
+
+#### Path A — **K3s** (single server, common for VPS)
+
+Install:
+
+```bash
+curl -sfL https://get.k3s.io | sh -
+sudo systemctl status k3s
+```
+
+Use `kubectl` as the k3s user:
+
+```bash
+sudo mkdir -p ~/.kube
+sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+sudo chown "$USER:$USER" ~/.kube/config
+export KUBECONFIG=~/.kube/config
+kubectl get nodes
+```
+
+K3s uses **containerd**, not the Docker daemon, so it **does not** see images you built with `docker build` until you import them:
+
+```bash
+cd ~/Kubernetes   # or your clone path
+docker build -t construction-node-app:1.0 .
+docker save construction-node-app:1.0 | sudo k3s ctr images import -
+kubectl apply -f deployment.yaml -f service.yaml
+kubectl get pods,svc -l app=construction-mgmt
+```
+
+**NodePort from outside:** this repo’s Service uses **30080**. Open the port and browse `http://SERVER_IP:30080`.
+
+```bash
+sudo ufw allow 30080/tcp comment 'k8s NodePort construction-app'
+```
+
+**Port-forward over SSH** (no public NodePort needed):
+
+```bash
+# on laptop
+ssh -L 8080:127.0.0.1:8080 user@SERVER_IP
+# on server
+kubectl port-forward svc/construction-app-svc 8080:80
+```
+
+Then on the laptop: **http://localhost:8080**
+
+#### Path B — **MicroK8s** (Snap)
+
+```bash
+sudo snap install microk8s --classic
+sudo usermod -aG microk8s "$USER"
+# log out / in, then:
+microk8s status --wait-ready
+alias kubectl='microk8s kubectl'
+```
+
+Import a Docker-built image, then apply manifests (same idea as K3s):
+
+```bash
+docker build -t construction-node-app:1.0 .
+docker save construction-node-app:1.0 | microk8s ctr image import -
+kubectl apply -f deployment.yaml -f service.yaml
+```
+
+#### Path C — **Minikube** on Linux
+
+```bash
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+minikube start --driver=docker
+eval $(minikube docker-env)
+docker build -t construction-node-app:1.0 .
+kubectl apply -f deployment.yaml -f service.yaml
+minikube service construction-app-svc --url
+```
+
+#### Path D — **Remote / cloud cluster only**
+
+Build on the server (or in CI), **push** the image to a registry (Docker Hub, GHCR, ECR, etc.), set `deployment.yaml` `image:` to that full name, and run `kubectl apply` from anywhere that has kubeconfig for that cluster. The cluster nodes pull the image from the registry — no `docker save` import needed.
+
+---
+
+### 15.5 Install `kubectl` on Linux (standalone)
+
+If you only have kubeconfig for a remote cluster:
+
+```bash
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+kubectl version --client
+```
+
+Copy `~/.kube/config` from another machine or use your cloud provider’s CLI to fetch credentials.
+
+---
+
+### 15.6 Linux quick checklist
+
+| Step | Action |
+|------|--------|
+| 1 | Install Docker (or use a cluster that can pull from a registry). |
+| 2 | Clone or copy this repo; `cd` into it. |
+| 3 | **Docker only:** `docker build` → `docker run -p 3000:3000` → open firewall for `3000`. |
+| 4 | **K3s / MicroK8s:** `docker build` → **import image** into the runtime → `kubectl apply`. |
+| 5 | **NodePort 30080:** open in cloud security group + `ufw` if used. |
+| 6 | Prefer **HTTPS + domain** in production (Ingress + reverse proxy or managed LB), not raw NodePort on the public internet. |
 
 ---
 
