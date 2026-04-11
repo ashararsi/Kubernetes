@@ -1,0 +1,408 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: construction-app-html
+  labels:
+    app: construction-mgmt
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+      <title>IronFrame — Construction HQ</title>
+      <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet"/>
+      <style>
+        :root {
+          --black:   #0d0d0d;
+          --steel:   #1c1f24;
+          --panel:   #252930;
+          --border:  #333840;
+          --yellow:  #f5c400;
+          --orange:  #e8610a;
+          --dim:     #8a9099;
+          --white:   #f0f2f5;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+          background: var(--black);
+          color: var(--white);
+          font-family: 'IBM Plex Sans', sans-serif;
+          min-height: 100vh;
+          overflow-x: hidden;
+        }
+
+        /* ── diagonal stripe background ── */
+        body::before {
+          content: '';
+          position: fixed; inset: 0;
+          background: repeating-linear-gradient(
+            -55deg,
+            transparent,
+            transparent 40px,
+            rgba(245,196,0,0.025) 40px,
+            rgba(245,196,0,0.025) 42px
+          );
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        .page { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+        /* ── header ── */
+        header {
+          display: flex; align-items: center; gap: 1.2rem;
+          border-bottom: 2px solid var(--yellow);
+          padding-bottom: 1.2rem; margin-bottom: 2.5rem;
+          animation: slideDown .5s ease both;
+        }
+        .logo-mark {
+          width: 48px; height: 48px;
+          background: var(--yellow);
+          clip-path: polygon(0 20%, 50% 0%, 100% 20%, 100% 80%, 50% 100%, 0 80%);
+          display: grid; place-items: center;
+          flex-shrink: 0;
+        }
+        .logo-mark span { font-family: 'Bebas Neue'; font-size: 1.4rem; color: var(--black); }
+        h1 { font-family: 'Bebas Neue'; font-size: 2.4rem; letter-spacing: .08em; color: var(--yellow); }
+        h1 small { font-family: 'IBM Plex Sans'; font-size: .75rem; font-weight: 300;
+                   color: var(--dim); display: block; letter-spacing: .2em; text-transform: uppercase; margin-top: -4px; }
+
+        /* ── kpi strip ── */
+        .kpi-row {
+          display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+          margin-bottom: 2rem;
+        }
+        .kpi {
+          background: var(--steel); border: 1px solid var(--border);
+          border-top: 3px solid var(--yellow);
+          padding: 1.1rem 1.2rem; border-radius: 2px;
+          animation: fadeUp .5s ease both;
+        }
+        .kpi:nth-child(2) { animation-delay:.08s }
+        .kpi:nth-child(3) { animation-delay:.16s; border-top-color: var(--orange); }
+        .kpi:nth-child(4) { animation-delay:.24s }
+        .kpi-label { font-size: .68rem; font-weight: 600; letter-spacing: .18em;
+                     text-transform: uppercase; color: var(--dim); margin-bottom: .5rem; }
+        .kpi-value { font-family: 'Bebas Neue'; font-size: 2.2rem; color: var(--white); line-height: 1; }
+        .kpi-sub   { font-size: .72rem; color: var(--dim); margin-top: .3rem; font-family: 'IBM Plex Mono'; }
+        .up   { color: #4caf87; }
+        .warn { color: var(--orange); }
+
+        /* ── main grid ── */
+        .grid { display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; }
+
+        /* ── projects table ── */
+        .card {
+          background: var(--steel); border: 1px solid var(--border); border-radius: 2px;
+          animation: fadeUp .5s .3s ease both;
+        }
+        .card-header {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: .9rem 1.2rem; border-bottom: 1px solid var(--border);
+        }
+        .card-title { font-family: 'Bebas Neue'; font-size: 1.1rem; letter-spacing: .06em; color: var(--yellow); }
+        .badge {
+          font-family: 'IBM Plex Mono'; font-size: .68rem; font-weight: 600;
+          background: var(--panel); border: 1px solid var(--border);
+          color: var(--dim); padding: .2rem .55rem; border-radius: 2px;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th {
+          font-size: .65rem; font-weight: 600; letter-spacing: .2em;
+          text-transform: uppercase; color: var(--dim);
+          padding: .7rem 1.2rem; text-align: left;
+          border-bottom: 1px solid var(--border);
+        }
+        td {
+          padding: .8rem 1.2rem; font-size: .85rem;
+          border-bottom: 1px solid rgba(51,56,64,.5);
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(245,196,0,.04); }
+
+        .project-name { font-weight: 600; }
+        .project-id   { font-family: 'IBM Plex Mono'; font-size: .72rem; color: var(--dim); margin-top: 2px; }
+
+        /* progress bar */
+        .prog-wrap { background: var(--panel); border-radius: 2px; height: 5px; width: 100px; }
+        .prog-fill  { height: 5px; border-radius: 2px; background: var(--yellow);
+                      transition: width .6s ease; }
+        .prog-fill.late { background: var(--orange); }
+        .prog-pct  { font-family: 'IBM Plex Mono'; font-size: .72rem; color: var(--dim); margin-top: 4px; }
+
+        .status-pill {
+          display: inline-block; font-size: .65rem; font-weight: 600;
+          letter-spacing: .12em; text-transform: uppercase;
+          padding: .25rem .6rem; border-radius: 2px;
+        }
+        .status-pill.active   { background: rgba(76,175,135,.15); color: #4caf87; border: 1px solid rgba(76,175,135,.3); }
+        .status-pill.review   { background: rgba(245,196,0,.12);  color: var(--yellow); border: 1px solid rgba(245,196,0,.3); }
+        .status-pill.delayed  { background: rgba(232,97,10,.15);  color: var(--orange); border: 1px solid rgba(232,97,10,.3); }
+
+        /* ── sidebar ── */
+        .sidebar { display: flex; flex-direction: column; gap: 1.2rem; }
+
+        .sidebar .card { animation-delay: .38s; }
+        .sidebar .card:nth-child(2) { animation-delay: .44s; }
+
+        .event-list { padding: .4rem 0; }
+        .event {
+          display: flex; gap: .8rem; align-items: flex-start;
+          padding: .65rem 1.2rem;
+          border-bottom: 1px solid rgba(51,56,64,.5);
+          font-size: .82rem;
+        }
+        .event:last-child { border-bottom: none; }
+        .event-dot {
+          width: 8px; height: 8px; border-radius: 50%;
+          flex-shrink: 0; margin-top: 5px;
+        }
+        .event-dot.yellow { background: var(--yellow); }
+        .event-dot.orange { background: var(--orange); }
+        .event-dot.green  { background: #4caf87; }
+        .event-dot.grey   { background: var(--dim); }
+        .event-text { color: var(--white); line-height: 1.4; }
+        .event-time { font-family: 'IBM Plex Mono'; font-size: .68rem; color: var(--dim); margin-top: 3px; }
+
+        /* crew gauge */
+        .crew-gauge { padding: 1.2rem; }
+        .gauge-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem; }
+        .gauge-label { font-size: .78rem; color: var(--dim); }
+        .gauge-num   { font-family: 'IBM Plex Mono'; font-size: .78rem; font-weight: 600; }
+        .gauge-bar   { background: var(--panel); height: 6px; border-radius: 2px; margin-bottom: 1rem; }
+        .gauge-fill  { height: 6px; border-radius: 2px; background: linear-gradient(90deg, var(--yellow), var(--orange)); }
+
+        /* ── footer ── */
+        footer {
+          margin-top: 2.5rem; padding-top: 1rem;
+          border-top: 1px solid var(--border);
+          display: flex; justify-content: space-between; align-items: center;
+          font-family: 'IBM Plex Mono'; font-size: .68rem; color: var(--dim);
+          animation: fadeUp .5s .5s ease both;
+        }
+        .pod-badge {
+          background: var(--panel); border: 1px solid var(--border);
+          padding: .2rem .6rem; border-radius: 2px;
+          display: flex; align-items: center; gap: .4rem;
+        }
+        .pod-dot { width: 6px; height: 6px; border-radius: 50%; background: #4caf87;
+                   box-shadow: 0 0 6px #4caf87; animation: pulse 2s infinite; }
+
+        @keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:.4} }
+        @keyframes slideDown{ from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:none} }
+        @keyframes fadeUp   { from{opacity:0;transform:translateY(12px)}  to{opacity:1;transform:none} }
+
+        @media(max-width:800px){
+          .kpi-row  { grid-template-columns: repeat(2,1fr); }
+          .grid     { grid-template-columns: 1fr; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="page">
+
+        <header>
+          <div class="logo-mark"><span>IF</span></div>
+          <div>
+            <h1>IronFrame<small>Construction Management Platform</small></h1>
+          </div>
+        </header>
+
+        <!-- KPI strip -->
+        <div class="kpi-row">
+          <div class="kpi">
+            <div class="kpi-label">Active Projects</div>
+            <div class="kpi-value">14</div>
+            <div class="kpi-sub up">▲ 2 this quarter</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Budget Utilised</div>
+            <div class="kpi-value">68%</div>
+            <div class="kpi-sub">$8.2M of $12.1M</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Overdue Tasks</div>
+            <div class="kpi-value">7</div>
+            <div class="kpi-sub warn">▲ 3 since last week</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Crew On-Site</div>
+            <div class="kpi-value">142</div>
+            <div class="kpi-sub">of 180 deployed</div>
+          </div>
+        </div>
+
+        <!-- Main grid -->
+        <div class="grid">
+
+          <!-- Projects table -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Active Projects</span>
+              <span class="badge">Q2 · 2026</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Project</th>
+                  <th>Progress</th>
+                  <th>Due</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="project-name">Harlow Tower Block C</div>
+                    <div class="project-id">#PRJ-0041</div>
+                  </td>
+                  <td>
+                    <div class="prog-wrap"><div class="prog-fill" style="width:78%"></div></div>
+                    <div class="prog-pct">78%</div>
+                  </td>
+                  <td>Jun 30</td>
+                  <td><span class="status-pill active">Active</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="project-name">Riverside Civic Centre</div>
+                    <div class="project-id">#PRJ-0038</div>
+                  </td>
+                  <td>
+                    <div class="prog-wrap"><div class="prog-fill late" style="width:44%"></div></div>
+                    <div class="prog-pct">44%</div>
+                  </td>
+                  <td>May 15</td>
+                  <td><span class="status-pill delayed">Delayed</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="project-name">Meridian Road Bridge</div>
+                    <div class="project-id">#PRJ-0035</div>
+                  </td>
+                  <td>
+                    <div class="prog-wrap"><div class="prog-fill" style="width:91%"></div></div>
+                    <div class="prog-pct">91%</div>
+                  </td>
+                  <td>Apr 20</td>
+                  <td><span class="status-pill review">Review</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="project-name">Greenfield Solar Farm</div>
+                    <div class="project-id">#PRJ-0033</div>
+                  </td>
+                  <td>
+                    <div class="prog-wrap"><div class="prog-fill" style="width:55%"></div></div>
+                    <div class="prog-pct">55%</div>
+                  </td>
+                  <td>Aug 01</td>
+                  <td><span class="status-pill active">Active</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="project-name">Central Depot Upgrade</div>
+                    <div class="project-id">#PRJ-0030</div>
+                  </td>
+                  <td>
+                    <div class="prog-wrap"><div class="prog-fill late" style="width:22%"></div></div>
+                    <div class="prog-pct">22%</div>
+                  </td>
+                  <td>Apr 30</td>
+                  <td><span class="status-pill delayed">Delayed</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Sidebar -->
+          <div class="sidebar">
+
+            <!-- Activity feed -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Site Activity</span>
+              </div>
+              <div class="event-list">
+                <div class="event">
+                  <div class="event-dot yellow"></div>
+                  <div>
+                    <div class="event-text">Inspection passed — Harlow C (Level 12)</div>
+                    <div class="event-time">09:14 today</div>
+                  </div>
+                </div>
+                <div class="event">
+                  <div class="event-dot orange"></div>
+                  <div>
+                    <div class="event-text">Delay flagged — concrete pour rescheduled</div>
+                    <div class="event-time">08:51 today</div>
+                  </div>
+                </div>
+                <div class="event">
+                  <div class="event-dot green"></div>
+                  <div>
+                    <div class="event-text">PRJ-0035 milestone signed off</div>
+                    <div class="event-time">Yesterday</div>
+                  </div>
+                </div>
+                <div class="event">
+                  <div class="event-dot grey"></div>
+                  <div>
+                    <div class="event-text">Materials delivery confirmed — Greenfield</div>
+                    <div class="event-time">Yesterday</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Crew utilisation -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Crew Utilisation</span>
+              </div>
+              <div class="crew-gauge">
+                <div class="gauge-row">
+                  <span class="gauge-label">Structural</span>
+                  <span class="gauge-num">38 / 45</span>
+                </div>
+                <div class="gauge-bar"><div class="gauge-fill" style="width:84%"></div></div>
+
+                <div class="gauge-row">
+                  <span class="gauge-label">Electrical</span>
+                  <span class="gauge-num">22 / 30</span>
+                </div>
+                <div class="gauge-bar"><div class="gauge-fill" style="width:73%"></div></div>
+
+                <div class="gauge-row">
+                  <span class="gauge-label">Civil / Groundworks</span>
+                  <span class="gauge-num">54 / 65</span>
+                </div>
+                <div class="gauge-bar"><div class="gauge-fill" style="width:83%"></div></div>
+
+                <div class="gauge-row">
+                  <span class="gauge-label">Health & Safety</span>
+                  <span class="gauge-num">28 / 40</span>
+                </div>
+                <div class="gauge-bar"><div class="gauge-fill" style="width:70%"></div></div>
+              </div>
+            </div>
+
+          </div><!-- /sidebar -->
+        </div><!-- /grid -->
+
+        <footer>
+          <span>IronFrame v1.0 · Kubernetes Demo</span>
+          <div class="pod-badge">
+            <div class="pod-dot"></div>
+            <span>Pod: construction-app · Namespace: default</span>
+          </div>
+        </footer>
+
+      </div>
+    </body>
+    </html>

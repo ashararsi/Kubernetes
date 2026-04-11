@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: construction-app
+  labels:
+    app: construction-mgmt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: construction-mgmt
+  template:
+    metadata:
+      labels:
+        app: construction-mgmt
+    spec:
+      containers:
+        - name: web
+          image: construction-node-app:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: PORT
+              value: "3000"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+---
+# Pehle wala nginx + ConfigMap setup ab use nahi ho raha.
+# Purana ConfigMap delete kar sakte ho (optional):
+#   kubectl delete configmap construction-app-html --ignore-not-found

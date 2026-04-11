@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: construction-app-svc
+  labels:
+    app: construction-mgmt
+spec:
+  selector:
+    app: construction-mgmt
+  type: NodePort
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+      nodePort: 30080
