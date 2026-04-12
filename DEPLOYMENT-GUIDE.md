@@ -21,6 +21,7 @@ This document is a step-by-step reference for deploying the Node.js welcome app 
 13. [Troubleshooting](#13-troubleshooting)
 14. [Legacy ConfigMap (optional)](#14-legacy-configmap-optional)
 15. [Deploying on a Linux server](#15-deploying-on-a-linux-server)
+16. [Rocky Linux — full walkthrough (Docker + K3s + app)](#16-rocky-linux--full-walkthrough-docker--k3s--app)
 
 ---
 
@@ -444,6 +445,237 @@ Copy `~/.kube/config` from another machine or use your cloud provider’s CLI to
 | 4 | **K3s / MicroK8s:** `docker build` → **import image** into the runtime → `kubectl apply`. |
 | 5 | **NodePort 30080:** open in cloud security group + `ufw` if used. |
 | 6 | Prefer **HTTPS + domain** in production (Ingress + reverse proxy or managed LB), not raw NodePort on the public internet. |
+
+---
+
+## 16. Rocky Linux — full walkthrough (Docker + K3s + app)
+
+This section is a **complete command sequence** for **Rocky Linux 8 or 9** (and similar RHEL clones: AlmaLinux, etc.). It installs **Docker Engine**, then **K3s** (lightweight Kubernetes), imports your locally built image, and deploys this repo’s manifests.
+
+Assumptions: **x86_64** server, `sudo` access, fresh or existing Rocky install with **firewalld** (default on Rocky). Run commands as a normal user where possible; use `sudo` where shown.
+
+---
+
+### 16.1 Update the system and install basics
+
+```bash
+sudo dnf -y update
+sudo dnf -y install git curl ca-certificates
+```
+
+---
+
+### 16.2 Install Docker Engine (official Docker repo for CentOS stream / RHEL family)
+
+Docker publishes packages compatible with Rocky via the **CentOS** repository (supported for Rocky/Alma).
+
+```bash
+sudo dnf -y install dnf-plugins-core
+sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+If `dnf` reports **no match for docker-ce**, your repo may need the **CentOS Stream 9** (or 8) base enabled, or try:
+
+```bash
+sudo dnf repolist
+sudo dnf -y install docker-ce docker-ce-cli containerd.io --nobest
+```
+
+Start Docker and enable it at boot:
+
+```bash
+sudo systemctl enable --now docker
+sudo systemctl status docker --no-pager
+```
+
+Add your user to the `docker` group (optional; avoids `sudo docker`):
+
+```bash
+sudo usermod -aG docker "$USER"
+```
+
+**Log out and SSH back in** (or `newgrp docker`), then verify:
+
+```bash
+docker run --rm hello-world
+```
+
+---
+
+### 16.3 Clone this project
+
+```bash
+cd ~
+git clone https://github.com/ashararsi/Kubernetes.git
+cd Kubernetes
+```
+
+If the repo is private or you copied files without Git, put the project files in `~/Kubernetes` (same layout: `Dockerfile`, `app/`, `deployment.yaml`, `service.yaml`).
+
+---
+
+### 16.4 (Optional) Run the app with Docker only — quick sanity check
+
+```bash
+docker build -t construction-node-app:1.0 .
+docker run --rm -d --name construction-welcome -p 3000:3000 construction-node-app:1.0
+curl -sS http://127.0.0.1:3000/health
+docker stop construction-welcome
+```
+
+---
+
+### 16.5 Configure firewalld before K3s
+
+K3s needs the API server and CNI traffic; your app’s **NodePort** is **30080**.
+
+```bash
+sudo systemctl enable --now firewalld
+sudo firewall-cmd --permanent --add-port=6443/tcp      # Kubernetes API (K3s)
+sudo firewall-cmd --permanent --add-port=10250/tcp     # kubelet
+sudo firewall-cmd --permanent --add-port=8472/udp      # Flannel VXLAN (K3s default)
+sudo firewall-cmd --permanent --add-port=51820/udp    # Flannel WireGuard, if used instead of VXLAN
+sudo firewall-cmd --permanent --add-port=30080/tcp    # This app’s NodePort
+sudo firewall-cmd --reload
+sudo firewall-cmd --list-all
+```
+
+If you will use **SSH port-forward** only and not expose NodePort publicly, you can skip opening **30080** on the public interface and still use `kubectl port-forward` from the server.
+
+---
+
+### 16.6 Install K3s (Kubernetes)
+
+Single-server install (default embedded SQLite, suitable for learning / small workloads):
+
+```bash
+curl -sfL https://get.k3s.io | sh -
+sudo systemctl status k3s --no-pager
+```
+
+Check the node:
+
+```bash
+sudo k3s kubectl get nodes
+```
+
+---
+
+### 16.7 Use `kubectl` as your user (not only `sudo k3s kubectl`)
+
+```bash
+mkdir -p ~/.kube
+sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+sudo chown "$(id -u):$(id -g)" ~/.kube/config
+chmod 600 ~/.kube/config
+export KUBECONFIG="$HOME/.kube/config"
+echo 'export KUBECONFIG="$HOME/.kube/config"' >> ~/.bashrc
+kubectl get nodes
+```
+
+If you administer the cluster **from another machine**, copy `~/.kube/config` and replace the `server: https://127.0.0.1:6443` line with `https://ROCKY_SERVER_IP:6443` (and ensure **6443/tcp** is reachable and secured).
+
+---
+
+### 16.8 Build the image with Docker and import it into K3s
+
+K3s uses **containerd**; it does **not** see images built with `docker build` until you import them.
+
+```bash
+cd ~/Kubernetes
+docker build -t construction-node-app:1.0 .
+docker save construction-node-app:1.0 | sudo k3s ctr images import -
+```
+
+Verify the image inside K3s:
+
+```bash
+sudo k3s ctr images ls | grep construction-node-app
+```
+
+---
+
+### 16.9 Deploy the app to Kubernetes
+
+```bash
+cd ~/Kubernetes
+kubectl apply -f deployment.yaml -f service.yaml
+kubectl rollout status deployment/construction-app --timeout=120s
+kubectl get pods,svc -l app=construction-mgmt -o wide
+```
+
+Expected: pod **Running** `1/1`, Service type **NodePort** with port **30080**.
+
+---
+
+### 16.10 Open the app
+
+**On the Rocky server:**
+
+```bash
+curl -sS -o /dev/null -w "%{http_code}\n" http://127.0.0.1:30080/
+curl -sS http://127.0.0.1:30080/health
+```
+
+**From your laptop** (replace `ROCKY_SERVER_IP`):
+
+```text
+http://ROCKY_SERVER_IP:30080
+```
+
+**Port-forward (works well with SSH):**
+
+```bash
+# On Rocky
+kubectl port-forward svc/construction-app-svc 8080:80
+```
+
+Then browse **http://127.0.0.1:8080** on that machine, or combine with SSH local forward from your laptop:
+
+```bash
+# On laptop
+ssh -L 8080:127.0.0.1:8080 rocky@ROCKY_SERVER_IP
+# In SSH session on Rocky, run port-forward as above; on laptop open http://localhost:8080
+```
+
+---
+
+### 16.11 Useful maintenance commands (Rocky + K3s)
+
+| Task | Command |
+|------|---------|
+| K3s service | `sudo systemctl restart k3s` |
+| Docker service | `sudo systemctl restart docker` |
+| App logs | `kubectl logs -f deployment/construction-app` |
+| Remove app | `kubectl delete -f service.yaml -f deployment.yaml` |
+| Uninstall K3s | `/usr/local/bin/k3s-uninstall.sh` (removes cluster data) |
+
+---
+
+### 16.12 SELinux and troubleshooting (Rocky)
+
+- **SELinux** is **enforcing** by default on Rocky. Docker and K3s usually work without changes. If a container is blocked, check: `sudo ausearch -m avc -ts recent`.
+- **`ImagePullBackOff`:** confirm the import in **16.8** and image name matches `deployment.yaml` (`construction-node-app:1.0`).
+- **`kubectl` connection refused:** `sudo systemctl status k3s`, firewall **6443/tcp**, valid `~/.kube/config`.
+- **NodePort works locally but not remotely:** `firewall-cmd --list-all`, cloud **security group** for **30080/tcp**, and correct server IP.
+
+---
+
+### 16.13 End-to-end command summary (copy after fresh Rocky login)
+
+Run in order after **16.1–16.7** are done once; **16.8–16.10** whenever you deploy or rebuild the image.
+
+```bash
+# One-time per rebuild / deploy cycle
+cd ~/Kubernetes
+docker build -t construction-node-app:1.0 .
+docker save construction-node-app:1.0 | sudo k3s ctr images import -
+kubectl apply -f deployment.yaml -f service.yaml
+kubectl rollout status deployment/construction-app --timeout=120s
+kubectl get pods,svc -l app=construction-mgmt
+curl -sS http://127.0.0.1:30080/health
+```
 
 ---
 
