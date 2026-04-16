@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Deployment Guide — IronFrame Construction App</title>
+  <title>Deployment Guide — IronFrame</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -17,11 +17,16 @@
       --accent2:  #e8610a;
       --green:    #3fb950;
       --blue:     #58a6ff;
+      --red:      #f85149;
       --text:     #e6edf3;
       --muted:    #8b949e;
+      --sidebar-w: 264px;
+      --nav-h:     60px;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
+
     body {
       font-family: "Inter", system-ui, sans-serif;
       background: var(--bg);
@@ -31,210 +36,415 @@
       flex-direction: column;
     }
 
+    /* ── PROGRESS BAR ── */
+    #progress-bar {
+      position: fixed; top: 0; left: 0; z-index: 200;
+      height: 3px; width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width .1s linear;
+    }
+
     /* ── TOPNAV ── */
     .topnav {
       position: sticky; top: 0; z-index: 100;
+      height: var(--nav-h);
       background: rgba(13,17,23,.92);
-      backdrop-filter: blur(12px);
+      backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--border);
-      height: 60px; padding: 0 2rem;
-      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 1.5rem;
+      display: flex; align-items: center; gap: 1rem;
     }
-    .nav-brand { display: flex; align-items: center; gap: .75rem; text-decoration: none; }
+
+    .nav-brand {
+      display: flex; align-items: center; gap: .7rem;
+      text-decoration: none; flex-shrink: 0;
+    }
     .nav-logo {
-      width: 34px; height: 34px; background: var(--accent);
+      width: 32px; height: 32px; background: var(--accent);
       clip-path: polygon(0 25%,50% 0%,100% 25%,100% 75%,50% 100%,0 75%);
       display: grid; place-items: center;
     }
-    .nav-logo span { font-family:"JetBrains Mono"; font-size:.75rem; font-weight:700; color:#000; }
-    .nav-title { font-size:1rem; font-weight:600; color:var(--text); }
-    .nav-title small { font-size:.72rem; font-weight:400; color:var(--muted); margin-left:.4rem; }
+    .nav-logo span { font-family:"JetBrains Mono"; font-size:.72rem; font-weight:700; color:#000; }
+    .nav-title { font-size:.95rem; font-weight:600; color:var(--text); white-space:nowrap; }
+    .nav-title small { font-size:.7rem; font-weight:400; color:var(--muted); margin-left:.35rem; }
+
+    /* search box */
+    .search-wrap {
+      flex: 1; max-width: 380px; position: relative;
+    }
+    .search-wrap svg {
+      position: absolute; left: .75rem; top: 50%; transform: translateY(-50%);
+      color: var(--muted); pointer-events: none;
+    }
+    #search {
+      width: 100%; background: var(--surface2);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: .45rem .75rem .45rem 2.25rem;
+      font-family: inherit; font-size: .82rem; color: var(--text);
+      outline: none; transition: border-color .15s;
+    }
+    #search::placeholder { color: var(--muted); }
+    #search:focus { border-color: var(--accent); }
+
+    .nav-right { display: flex; align-items: center; gap: .75rem; margin-left: auto; }
+
     .pod-chip {
-      display:flex; align-items:center; gap:.4rem;
-      font-family:"JetBrains Mono"; font-size:.72rem; color:var(--muted);
-      background:var(--surface2); border:1px solid var(--border);
-      padding:.3rem .75rem; border-radius:20px;
+      display: flex; align-items: center; gap: .4rem;
+      font-family: "JetBrains Mono"; font-size: .7rem; color: var(--muted);
+      background: var(--surface2); border: 1px solid var(--border);
+      padding: .28rem .7rem; border-radius: 20px; white-space: nowrap;
     }
     .pod-dot {
-      width:6px; height:6px; border-radius:50%;
-      background:var(--green); box-shadow:0 0 6px var(--green);
-      animation:pulse 2s infinite;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green); box-shadow: 0 0 6px var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    /* hamburger (mobile) */
+    .hamburger {
+      display: none; background: none; border: none;
+      cursor: pointer; padding: .3rem; color: var(--text);
     }
 
     /* ── LAYOUT ── */
     .layout {
-      display:flex; flex:1;
-      max-width:1380px; margin:0 auto; width:100%; padding:0 1.5rem;
+      display: flex; flex: 1;
+      max-width: 1380px; margin: 0 auto; width: 100%; padding: 0 1.5rem;
     }
 
     /* ── SIDEBAR ── */
     .sidebar {
-      width:260px; flex-shrink:0;
-      padding:2rem 1rem 2rem 0;
-      position:sticky; top:60px;
-      height:calc(100vh - 60px); overflow-y:auto;
+      width: var(--sidebar-w); flex-shrink: 0;
+      padding: 1.75rem 1rem 2rem 0;
+      position: sticky; top: var(--nav-h);
+      height: calc(100vh - var(--nav-h)); overflow-y: auto;
     }
-    .sidebar::-webkit-scrollbar { width:4px; }
-    .sidebar::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+    .sidebar::-webkit-scrollbar { width: 3px; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
     .toc-label {
-      font-size:.62rem; font-weight:700; letter-spacing:.15em;
-      text-transform:uppercase; color:var(--muted);
-      padding-left:.75rem; margin-bottom:.75rem;
+      font-size: .6rem; font-weight: 700; letter-spacing: .16em;
+      text-transform: uppercase; color: var(--muted);
+      padding-left: .75rem; margin-bottom: .65rem;
     }
-    .toc { list-style:none; }
+    .toc { list-style: none; }
     .toc li a {
-      display:block; padding:.35rem .75rem;
-      font-size:.82rem; color:var(--muted); text-decoration:none;
-      border-left:2px solid transparent; border-radius:0 6px 6px 0;
-      transition:all .15s;
+      display: block; padding: .32rem .75rem;
+      font-size: .8rem; color: var(--muted); text-decoration: none;
+      border-left: 2px solid transparent; border-radius: 0 6px 6px 0;
+      transition: color .15s, background .15s, border-color .15s;
     }
-    .toc li a:hover { color:var(--text); background:var(--surface); border-left-color:var(--accent); }
+    .toc li a:hover,
+    .toc li a.active {
+      color: var(--text); background: var(--surface);
+      border-left-color: var(--accent);
+    }
+
+    /* search no-result */
+    .no-result {
+      display: none; text-align: center;
+      padding: 3rem 1rem; color: var(--muted); font-size: .9rem;
+    }
 
     /* ── MAIN ── */
     .main {
-      flex:1; min-width:0;
-      padding:2rem 0 4rem 2rem;
-      border-left:1px solid var(--border);
+      flex: 1; min-width: 0;
+      padding: 2rem 0 4rem 2rem;
+      border-left: 1px solid var(--border);
     }
 
     /* ── HERO ── */
     .hero {
-      background:linear-gradient(135deg,var(--surface),var(--surface2));
-      border:1px solid var(--border); border-radius:12px;
-      padding:2rem 2.5rem; margin-bottom:2.5rem;
-      display:flex; align-items:center; gap:2rem;
+      background: linear-gradient(135deg,var(--surface),var(--surface2));
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.75rem 2rem; margin-bottom: 2.5rem;
+      display: flex; align-items: center; gap: 1.5rem;
     }
     .hero-icon {
-      width:64px; height:64px; flex-shrink:0; border-radius:12px;
-      background:linear-gradient(135deg,var(--accent),var(--accent2));
-      display:grid; place-items:center; font-size:1.8rem;
+      width: 58px; height: 58px; flex-shrink: 0; border-radius: 12px;
+      background: linear-gradient(135deg,var(--accent),var(--accent2));
+      display: grid; place-items: center; font-size: 1.65rem;
     }
-    .hero-title { font-size:1.6rem; font-weight:700; margin-bottom:.4rem; }
-    .hero-sub { font-size:.9rem; color:var(--muted); line-height:1.6; }
-    .badges { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.75rem; }
+    .hero-title { font-size: 1.5rem; font-weight: 700; margin-bottom: .35rem; }
+    .hero-sub { font-size: .88rem; color: var(--muted); line-height: 1.6; }
+    .badges { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .65rem; }
     .badge {
-      font-size:.68rem; font-weight:700; letter-spacing:.08em;
-      text-transform:uppercase; padding:.2rem .65rem; border-radius:4px;
+      font-size: .65rem; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; padding: .18rem .6rem; border-radius: 4px;
     }
     .b-yellow { background:rgba(245,196,0,.15); color:var(--accent);  border:1px solid rgba(245,196,0,.3); }
-    .b-blue   { background:rgba(88,166,255,.15); color:var(--blue);    border:1px solid rgba(88,166,255,.3); }
-    .b-green  { background:rgba(63,185,80,.15);  color:var(--green);   border:1px solid rgba(63,185,80,.3); }
-    .b-orange { background:rgba(232,97,10,.15);  color:var(--accent2); border:1px solid rgba(232,97,10,.3); }
+    .b-blue   { background:rgba(88,166,255,.15); color:var(--blue);   border:1px solid rgba(88,166,255,.3); }
+    .b-green  { background:rgba(63,185,80,.15);  color:var(--green);  border:1px solid rgba(63,185,80,.3); }
+    .b-orange { background:rgba(232,97,10,.15);  color:var(--accent2);border:1px solid rgba(232,97,10,.3); }
 
     /* ── SECTIONS ── */
-    .section { margin-bottom:3rem; }
+    .section { margin-bottom: 2.75rem; }
 
     h2.section-title {
-      font-size:1.25rem; font-weight:700; color:var(--text);
-      padding-bottom:.6rem; margin-bottom:1.25rem;
-      border-bottom:2px solid var(--border);
-      display:flex; align-items:center; gap:.6rem;
+      font-size: 1.2rem; font-weight: 700;
+      padding-bottom: .55rem; margin-bottom: 1.1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .55rem;
     }
     h2.section-title::before {
-      content:''; display:inline-block;
-      width:4px; height:1.1rem; background:var(--accent); border-radius:2px; flex-shrink:0;
+      content: ''; display: inline-block;
+      width: 3px; height: 1rem; background: var(--accent);
+      border-radius: 2px; flex-shrink: 0;
     }
-    h3.sub-title {
-      font-size:1rem; font-weight:600; color:var(--text);
-      margin:1.5rem 0 .75rem;
-    }
+    h3.sub-title { font-size: .98rem; font-weight: 600; color: var(--text); margin: 1.4rem 0 .65rem; }
     h4.mini-title {
-      font-size:.8rem; font-weight:600; text-transform:uppercase;
-      letter-spacing:.08em; color:var(--muted); margin:1.25rem 0 .5rem;
+      font-size: .75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .09em; color: var(--muted); margin: 1.1rem 0 .45rem;
     }
 
-    p { font-size:.9rem; line-height:1.75; color:#c9d1d9; margin-bottom:1rem; }
-    a { color:var(--blue); text-decoration:none; }
-    a:hover { text-decoration:underline; }
+    p { font-size: .88rem; line-height: 1.78; color: #c9d1d9; margin-bottom: .9rem; }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    ul, ol { padding-left: 1.4rem; margin-bottom: .9rem; }
+    li { font-size: .88rem; line-height: 1.78; color: #c9d1d9; margin-bottom: .2rem; }
+    strong { color: var(--text); }
 
-    ul, ol { padding-left:1.5rem; margin-bottom:1rem; }
-    li { font-size:.9rem; line-height:1.75; color:#c9d1d9; margin-bottom:.2rem; }
-    strong { color:var(--text); }
-
-    /* code */
+    /* inline code */
     code {
-      font-family:"JetBrains Mono",monospace; font-size:.82rem;
-      background:var(--surface2); border:1px solid var(--border);
-      color:var(--accent); padding:.15rem .45rem; border-radius:4px;
+      font-family: "JetBrains Mono", monospace; font-size: .8rem;
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--accent); padding: .13rem .42rem; border-radius: 4px;
     }
-    pre {
-      background:var(--surface); border:1px solid var(--border);
-      border-radius:8px; padding:1.2rem 1.5rem; margin:1rem 0 1.5rem;
-      overflow-x:auto; position:relative;
+
+    /* code block */
+    .code-block {
+      position: relative; margin: .9rem 0 1.4rem;
     }
-    pre::before {
-      content:'bash'; position:absolute; top:.5rem; right:.75rem;
-      font-family:"JetBrains Mono"; font-size:.6rem; color:var(--muted);
-      text-transform:uppercase; letter-spacing:.1em;
+    .code-block pre {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1.1rem 1.35rem;
+      overflow-x: auto;
     }
-    pre code {
-      background:none; border:none; padding:0;
-      color:#e6edf3; font-size:.82rem;
+    .code-block pre code {
+      background: none; border: none; padding: 0;
+      color: #e6edf3; font-size: .8rem; line-height: 1.7;
     }
+    .code-label {
+      position: absolute; top: .55rem; right: 3.2rem;
+      font-family: "JetBrains Mono"; font-size: .58rem;
+      color: var(--muted); text-transform: uppercase; letter-spacing: .1em;
+    }
+    .copy-btn {
+      position: absolute; top: .45rem; right: .6rem;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 5px; padding: .22rem .5rem;
+      cursor: pointer; color: var(--muted); font-size: .7rem;
+      font-family: "JetBrains Mono"; display: flex; align-items: center; gap: .3rem;
+      transition: color .15s, border-color .15s, background .15s;
+    }
+    .copy-btn:hover { color: var(--text); border-color: var(--accent); background: var(--surface); }
+    .copy-btn.copied { color: var(--green); border-color: var(--green); }
 
     /* table */
-    table { width:100%; border-collapse:collapse; margin:1rem 0 1.5rem; font-size:.85rem; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
-    th { background:var(--surface2); padding:.7rem 1rem; text-align:left; font-size:.7rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); }
-    td { padding:.7rem 1rem; border-bottom:1px solid rgba(48,54,61,.5); color:#c9d1d9; vertical-align:top; }
-    tr:last-child td { border-bottom:none; }
-    tr:hover td { background:rgba(245,196,0,.03); }
-
-    hr { border:none; border-top:1px solid var(--border); margin:2rem 0; }
-
-    /* callout boxes */
-    .callout {
-      border-left:3px solid var(--accent); background:var(--surface);
-      padding:.9rem 1.2rem; border-radius:0 8px 8px 0; margin:1rem 0 1.5rem;
+    table {
+      width: 100%; border-collapse: collapse;
+      margin: .9rem 0 1.4rem; font-size: .84rem;
+      border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
     }
-    .callout.info  { border-left-color:var(--blue); }
-    .callout.warn  { border-left-color:var(--accent2); }
-    .callout p { margin:0; color:var(--muted); font-size:.88rem; }
+    th {
+      background: var(--surface2); padding: .65rem 1rem;
+      text-align: left; font-size: .67rem; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: var(--muted); border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: .65rem 1rem; border-bottom: 1px solid rgba(48,54,61,.5);
+      color: #c9d1d9; vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(245,196,0,.03); }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 1.75rem 0; }
+
+    /* callout */
+    .callout {
+      border-left: 3px solid var(--accent); background: var(--surface);
+      padding: .8rem 1.1rem; border-radius: 0 8px 8px 0; margin: .9rem 0 1.3rem;
+    }
+    .callout.info { border-left-color: var(--blue); }
+    .callout.warn { border-left-color: var(--accent2); }
+    .callout p { margin: 0; color: var(--muted); font-size: .85rem; }
 
     /* checklist */
-    .checklist { list-style:none; padding:0; }
-    .checklist li { display:flex; gap:.6rem; align-items:flex-start; margin-bottom:.5rem; font-size:.9rem; color:#c9d1d9; }
-    .checklist li::before { content:'✓'; color:var(--green); font-weight:700; flex-shrink:0; margin-top:.1rem; }
+    .checklist { list-style: none; padding: 0; }
+    .checklist li { display: flex; gap: .55rem; align-items: flex-start; margin-bottom: .45rem; }
+    .checklist li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: .1rem; }
+
+    /* search highlight */
+    mark { background: rgba(245,196,0,.28); color: var(--text); border-radius: 2px; padding: 0 2px; }
+
+    /* ── BACK TO TOP ── */
+    #back-top {
+      position: fixed; bottom: 1.75rem; right: 1.75rem; z-index: 50;
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--surface2); border: 1px solid var(--border);
+      display: grid; place-items: center; cursor: pointer;
+      color: var(--muted); opacity: 0; pointer-events: none;
+      transition: opacity .2s, color .15s, border-color .15s;
+    }
+    #back-top.visible { opacity: 1; pointer-events: all; }
+    #back-top:hover { color: var(--accent); border-color: var(--accent); }
 
     /* ── FOOTER ── */
     footer {
-      border-top:1px solid var(--border); background:var(--surface);
-      padding:1rem 2rem; display:flex; justify-content:space-between; align-items:center;
-      font-family:"JetBrains Mono"; font-size:.7rem; color:var(--muted);
+      border-top: 1px solid var(--border); background: var(--surface);
+      padding: .9rem 2rem; display: flex;
+      justify-content: space-between; align-items: center;
+      font-family: "JetBrains Mono"; font-size: .68rem; color: var(--muted);
     }
 
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
-    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
-    .hero  { animation:fadeIn .4s ease both; }
-    .main  { animation:fadeIn .4s .08s ease both; }
+    /* ── ANIMATIONS ── */
+    @keyframes pulse   { 0%,100%{opacity:1} 50%{opacity:.35} }
+    @keyframes fadeIn  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+    .hero  { animation: fadeIn .35s ease both; }
+    .main  { animation: fadeIn .35s .06s ease both; }
 
-    @media(max-width:768px) {
-      .sidebar { display:none; }
-      .main { padding:1.5rem 0 3rem; border-left:none; }
-      .hero { flex-direction:column; gap:1rem; padding:1.5rem; }
-      .pod-chip { display:none; }
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .sidebar {
+        position: fixed; top: var(--nav-h); left: 0; z-index: 90;
+        height: calc(100vh - var(--nav-h)); width: var(--sidebar-w);
+        background: var(--bg); border-right: 1px solid var(--border);
+        padding: 1.5rem 1rem; transform: translateX(-100%);
+        transition: transform .25s ease;
+      }
+      .sidebar.open { transform: translateX(0); }
+      .hamburger { display: grid; place-items: center; }
+      .main { padding: 1.5rem 0 3rem; border-left: none; }
+      .layout { padding: 0 1rem; }
+    }
+
+    @media (max-width: 600px) {
+      .pod-chip { display: none; }
+      .search-wrap { max-width: 100%; }
+      .hero { flex-direction: column; gap: 1rem; padding: 1.25rem; }
+    }
+
+    /* ── ARCHITECTURE DIAGRAM ── */
+    .arch-diagram { padding: 1.5rem 0; }
+    .arch-row { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; gap: 0.5rem; }
+    .arch-row-2 { margin-top: 1.5rem; }
+    .arch-box {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.25rem; text-align: center;
+      min-width: 130px; transition: border-color .2s;
+    }
+    .arch-box:hover { border-color: var(--accent); }
+    .arch-box.browser  { border-top: 3px solid var(--blue); }
+    .arch-box.service  { border-top: 3px solid var(--accent); }
+    .arch-box.pod      { border-top: 3px solid var(--green); }
+    .arch-box.deployment { border-top: 3px solid var(--accent2); }
+    .arch-icon { margin-bottom: .4rem; color: var(--muted); }
+    .arch-label { font-size: .88rem; font-weight: 700; color: var(--text); }
+    .arch-sub { font-size: .7rem; color: var(--muted); margin-top: .2rem; line-height: 1.5; }
+    .arch-arrow { display: flex; flex-direction: column; align-items: center; gap: .2rem; padding: 0 .25rem; }
+    .arch-arrow-line {
+      width: 40px; height: 2px; background: var(--border); position: relative;
+    }
+    .arch-arrow-line::after {
+      content: ''; position: absolute; right: -1px; top: -4px;
+      border: 5px solid transparent; border-left-color: var(--border);
+    }
+    .arch-arrow-label { font-size: .62rem; color: var(--muted); font-family: "JetBrains Mono"; white-space: nowrap; }
+
+    /* ── CI/CD PIPELINE ── */
+    .pipeline {
+      display: flex; align-items: center; flex-wrap: wrap;
+      gap: 0; margin: 1.25rem 0 1.75rem; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem;
+    }
+    .pipe-step { display: flex; flex-direction: column; align-items: center; gap: .5rem; flex: 1; min-width: 80px; }
+    .pipe-icon {
+      width: 44px; height: 44px; border-radius: 10px; border: 1px solid;
+      display: grid; place-items: center;
+    }
+    .pipe-label { font-size: .8rem; font-weight: 700; color: var(--text); }
+    .pipe-sub { font-size: .68rem; color: var(--muted); font-family: "JetBrains Mono"; }
+    .pipe-connector {
+      height: 2px; flex: 1; min-width: 20px;
+      background: linear-gradient(90deg, var(--border), var(--accent), var(--border));
+      margin-bottom: 1.5rem;
+    }
+
+    /* ── STATUS PILLS (table) ── */
+    .pill {
+      display: inline-block; font-size: .65rem; font-weight: 700;
+      letter-spacing: .07em; text-transform: uppercase;
+      padding: .18rem .55rem; border-radius: 4px;
+    }
+    .pill.green  { background: rgba(63,185,80,.15);  color: var(--green);  border: 1px solid rgba(63,185,80,.3); }
+    .pill.orange { background: rgba(245,196,0,.15);  color: var(--accent); border: 1px solid rgba(245,196,0,.3); }
+
+    /* ── PRODUCTION CHECKLIST GRID ── */
+    .checklist-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: .75rem; margin: 1rem 0 1.5rem;
+    }
+    .check-card {
+      display: flex; gap: .75rem; align-items: flex-start;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: .9rem 1rem;
+      transition: border-color .15s;
+    }
+    .check-card:hover { border-color: var(--accent); }
+    .check-card.done  { border-left: 3px solid var(--green); }
+    .check-card.todo  { border-left: 3px solid var(--accent); }
+    .check-icon { flex-shrink: 0; margin-top: .1rem; }
+    .check-title { font-size: .88rem; font-weight: 600; color: var(--text); margin-bottom: .2rem; }
+    .check-desc  { font-size: .78rem; color: var(--muted); line-height: 1.5; }
+
+    @media (max-width: 600px) {
+      .arch-row { gap: .5rem; }
+      .arch-arrow-line { width: 20px; }
+      .pipeline { flex-direction: column; }
+      .pipe-connector { width: 2px; height: 20px; min-width: unset; margin-bottom: 0; margin-right: 1.5rem; background: linear-gradient(180deg, var(--border), var(--accent), var(--border)); }
+      .checklist-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
+<!-- READING PROGRESS -->
+<div id="progress-bar"></div>
+
 <!-- TOPNAV -->
 <nav class="topnav">
+  <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
   <a class="nav-brand" href="#">
     <div class="nav-logo"><span>IF</span></div>
     <span class="nav-title">IronFrame <small>Construction App</small></span>
   </a>
-  <div class="pod-chip">
-    <div class="pod-dot"></div>
-    <span id="pod-info">port: 3000</span>
+
+  <div class="search-wrap">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input id="search" type="search" placeholder="Search guide…" autocomplete="off" />
+  </div>
+
+  <div class="nav-right">
+    <div class="pod-chip">
+      <div class="pod-dot"></div>
+      <span id="pod-info">port: 3000</span>
+    </div>
   </div>
 </nav>
 
 <div class="layout">
 
-  <!-- SIDEBAR TOC -->
-  <aside class="sidebar">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
     <div class="toc-label">Contents</div>
-    <ul class="toc">
+    <ul class="toc" id="toc">
       <li><a href="#overview">1. Overview</a></li>
       <li><a href="#folder-structure">2. Folder Structure</a></li>
       <li><a href="#prerequisites">3. Prerequisites</a></li>
@@ -250,11 +460,17 @@
       <li><a href="#troubleshoot">13. Troubleshooting</a></li>
       <li><a href="#linux">15. Linux Server</a></li>
       <li><a href="#rocky">16. Rocky Linux</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#cicd">CI/CD Pipeline</a></li>
+      <li><a href="#security">Security</a></li>
+      <li><a href="#prod-checklist">Prod Checklist</a></li>
+      <li><a href="#advanced">Advanced K8s</a></li>
     </ul>
   </aside>
 
-  <!-- MAIN CONTENT -->
-  <main class="main">
+  <!-- MAIN -->
+  <main class="main" id="main-content">
+    <div class="no-result" id="no-result">No results found.</div>
 
     <!-- HERO -->
     <div class="hero">
@@ -282,7 +498,7 @@
         <tbody>
           <tr><td><strong>App</strong></td><td>Node.js 20 + Express — welcome HTML on <code>/</code>, <code>/health</code> for probes</td></tr>
           <tr><td><strong>Container port</strong></td><td><code>3000</code></td></tr>
-          <tr><td><strong>Kubernetes image</strong></td><td><code>construction-node-app:1.0</code> (local build; <code>imagePullPolicy: IfNotPresent</code>)</td></tr>
+          <tr><td><strong>Kubernetes image</strong></td><td><code>construction-node-app:1.0</code> — <code>imagePullPolicy: IfNotPresent</code></td></tr>
           <tr><td><strong>Service</strong></td><td><code>construction-app-svc</code> — port <code>80</code> → pod <code>3000</code>, NodePort <code>30080</code></td></tr>
           <tr><td><strong>Deployment</strong></td><td><code>construction-app</code> — label <code>app: construction-mgmt</code></td></tr>
         </tbody>
@@ -292,10 +508,15 @@
     <!-- 2. FOLDER STRUCTURE -->
     <div class="section" id="folder-structure">
       <h2 class="section-title">2. Folder Structure</h2>
-      <pre><code>.
+      <div class="code-block">
+        <span class="code-label">text</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>.
 ├── app/
 │   ├── package.json
-│   ├── package-lock.json
 │   ├── public/
 │   │   └── index.html        # This page
 │   └── server.js             # Express server
@@ -305,6 +526,7 @@
 ├── service.yaml
 ├── configmap.yaml
 └── DEPLOYMENT-GUIDE.md</code></pre>
+      </div>
     </div>
 
     <!-- 3. PREREQUISITES -->
@@ -312,8 +534,8 @@
       <h2 class="section-title">3. Prerequisites</h2>
       <ul class="checklist">
         <li><strong>Docker Desktop</strong> installed and running (whale icon in menu bar)</li>
-        <li><strong>Kubernetes</strong> enabled in Docker Desktop: <em>Settings → Kubernetes → Enable Kubernetes</em></li>
-        <li><strong>kubectl</strong> (bundled with Docker Desktop)</li>
+        <li><strong>Kubernetes</strong> enabled: <em>Docker Desktop → Settings → Kubernetes → Enable Kubernetes</em></li>
+        <li><strong>kubectl</strong> — bundled with Docker Desktop</li>
       </ul>
       <div class="callout">
         <p>Open a terminal and <code>cd "/Users/apple/Downloads/files (1)"</code> before running any commands.</p>
@@ -324,9 +546,23 @@
     <div class="section" id="docker-only">
       <h2 class="section-title">4. Docker Only (no Kubernetes)</h2>
       <p>Build the image:</p>
-      <pre><code>docker build -t construction-node-app:1.0 .</code></pre>
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>docker build -t construction-node-app:1.0 .</code></pre>
+      </div>
       <p>Run a container:</p>
-      <pre><code>docker run --rm -d --name construction-welcome -p 3000:3000 construction-node-app:1.0</code></pre>
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>docker run --rm -d --name construction-welcome -p 3000:3000 construction-node-app:1.0</code></pre>
+      </div>
       <table>
         <thead><tr><th>URL</th><th>Result</th></tr></thead>
         <tbody>
@@ -334,49 +570,87 @@
           <tr><td><code>http://localhost:3000/health</code></td><td>Returns <code>ok</code></td></tr>
         </tbody>
       </table>
-      <p>Stop:</p>
-      <pre><code>docker stop construction-welcome</code></pre>
+      <p>Stop the container:</p>
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>docker stop construction-welcome</code></pre>
+      </div>
     </div>
 
     <!-- 5. KUBERNETES SETUP -->
     <div class="section" id="k8s-setup">
       <h2 class="section-title">5. Kubernetes — First-Time Setup</h2>
       <ol>
-        <li>Open Docker Desktop and <strong>enable Kubernetes</strong>, wait until fully ready.</li>
+        <li>Open Docker Desktop and <strong>enable Kubernetes</strong>. Wait until fully ready.</li>
         <li>Check context:
-          <pre><code>kubectl config get-contexts</code></pre>
+          <div class="code-block" style="margin-top:.5rem">
+            <button class="copy-btn" onclick="copyCode(this)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+            <pre><code>kubectl config get-contexts</code></pre>
+          </div>
           Active context (e.g. <code>docker-desktop</code>) should be marked <strong>CURRENT</strong>.
         </li>
-        <li>Verify the cluster:
-          <pre><code>kubectl cluster-info
+        <li style="margin-top:.75rem">Verify the cluster:
+          <div class="code-block" style="margin-top:.5rem">
+            <button class="copy-btn" onclick="copyCode(this)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+            <pre><code>kubectl cluster-info
 kubectl get nodes</code></pre>
+          </div>
         </li>
       </ol>
     </div>
 
     <!-- 6. BUILD & DEPLOY -->
     <div class="section" id="build-deploy">
-      <h2 class="section-title">6. Build Image and Deploy to Cluster</h2>
-      <pre><code>cd "/Users/apple/Downloads/files (1)"
-
+      <h2 class="section-title">6. Build Image and Deploy</h2>
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>cd "/Users/apple/Downloads/files (1)"
 docker build -t construction-node-app:1.0 .
-
 kubectl apply -f deployment.yaml
 kubectl apply -f service.yaml</code></pre>
+      </div>
       <p>Check status:</p>
-      <pre><code>kubectl rollout status deployment/construction-app
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>kubectl rollout status deployment/construction-app
 kubectl get pods,svc -l app=construction-mgmt</code></pre>
+      </div>
       <div class="callout info">
         <p>You should see the pod <strong>READY 1/1</strong> and <strong>Running</strong>.</p>
       </div>
     </div>
 
-    <!-- 7. OPEN THE APP -->
+    <!-- 7. OPEN APP -->
     <div class="section" id="open-app">
       <h2 class="section-title">7. Open the App in a Browser</h2>
       <h3 class="sub-title">Option A — Port Forward (Recommended)</h3>
-      <pre><code>kubectl port-forward svc/construction-app-svc 8080:80</code></pre>
-      <p>Open <a href="http://localhost:8080" target="_blank">http://localhost:8080</a> in your browser. Press <code>Ctrl+C</code> to stop.</p>
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>kubectl port-forward svc/construction-app-svc 8080:80</code></pre>
+      </div>
+      <p>Open <a href="http://localhost:8080" target="_blank">http://localhost:8080</a>. Press <code>Ctrl+C</code> to stop.</p>
       <h3 class="sub-title">Option B — NodePort</h3>
       <p>Service maps <strong>NodePort <code>30080</code></strong>. On Docker Desktop, Option A is more reliable.</p>
     </div>
@@ -399,9 +673,16 @@ kubectl get pods,svc -l app=construction-mgmt</code></pre>
     <!-- 9. SCALE -->
     <div class="section" id="scale">
       <h2 class="section-title">9. Scale Replicas</h2>
-      <pre><code>kubectl scale deployment construction-app --replicas=2
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>kubectl scale deployment construction-app --replicas=2
 kubectl get pods -l app=construction-mgmt</code></pre>
-      <p>To make it permanent, edit <code>spec.replicas</code> in <code>deployment.yaml</code> and run <code>kubectl apply -f deployment.yaml</code> again.</p>
+      </div>
+      <p>To make it permanent, edit <code>spec.replicas</code> in <code>deployment.yaml</code> and re-apply.</p>
     </div>
 
     <!-- 10. UPDATE -->
@@ -409,24 +690,57 @@ kubectl get pods -l app=construction-mgmt</code></pre>
       <h2 class="section-title">10. Update After a New Image</h2>
       <ol>
         <li>Build with a new tag:
-          <pre><code>docker build -t construction-node-app:1.1 .</code></pre>
+          <div class="code-block" style="margin-top:.5rem">
+            <button class="copy-btn" onclick="copyCode(this)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+            <pre><code>docker build -t construction-node-app:1.1 .</code></pre>
+          </div>
         </li>
-        <li>Set <code>image: construction-node-app:1.1</code> in <code>deployment.yaml</code>, then:
-          <pre><code>kubectl apply -f deployment.yaml
+        <li style="margin-top:.5rem">Update <code>image:</code> in <code>deployment.yaml</code>, then:
+          <div class="code-block" style="margin-top:.5rem">
+            <button class="copy-btn" onclick="copyCode(this)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+            <pre><code>kubectl apply -f deployment.yaml
 kubectl rollout status deployment/construction-app</code></pre>
+          </div>
         </li>
       </ol>
-      <p>If keeping the same tag, just restart pods:</p>
-      <pre><code>kubectl rollout restart deployment/construction-app</code></pre>
+      <p>Keeping the same tag? Just restart pods:</p>
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>kubectl rollout restart deployment/construction-app</code></pre>
+      </div>
     </div>
 
     <!-- 11. CLEANUP -->
     <div class="section" id="cleanup">
       <h2 class="section-title">11. Cleanup</h2>
-      <pre><code>kubectl delete -f service.yaml --ignore-not-found
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>kubectl delete -f service.yaml --ignore-not-found
 kubectl delete -f deployment.yaml --ignore-not-found</code></pre>
+      </div>
       <p>Docker-only container:</p>
-      <pre><code>docker rm -f construction-welcome 2>/dev/null</code></pre>
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>docker rm -f construction-welcome 2>/dev/null</code></pre>
+      </div>
     </div>
 
     <!-- 12. WHAT'S NEXT -->
@@ -434,12 +748,12 @@ kubectl delete -f deployment.yaml --ignore-not-found</code></pre>
       <h2 class="section-title">12. What to Learn or Build Next</h2>
       <ol>
         <li><strong>Registry</strong> — Push to Docker Hub / GHCR; use full image name in Deployment.</li>
-        <li><strong>Secrets / ConfigMap</strong> — DB URLs, API keys; avoid hardcoding.</li>
+        <li><strong>Secrets / ConfigMap</strong> — DB URLs, API keys; avoid hardcoding in the image.</li>
         <li><strong>Namespace</strong> — <code>kubectl create namespace construction</code></li>
-        <li><strong>Ingress + TLS</strong> — Public hostname + HTTPS (cert-manager + Let's Encrypt).</li>
-        <li><strong>CI/CD</strong> — GitHub Actions: build → push → deploy.</li>
+        <li><strong>Ingress + TLS</strong> — Public hostname + HTTPS via cert-manager + Let's Encrypt.</li>
+        <li><strong>CI/CD</strong> — GitHub Actions: build → push → deploy (or Argo CD).</li>
         <li><strong>Resource limits</strong> — Tune <code>resources</code> in <code>deployment.yaml</code>.</li>
-        <li><strong>Monitoring</strong> — Centralised logs; Prometheus/Grafana.</li>
+        <li><strong>Monitoring</strong> — Centralised logs; Prometheus + Grafana.</li>
       </ol>
     </div>
 
@@ -450,73 +764,109 @@ kubectl delete -f deployment.yaml --ignore-not-found</code></pre>
         <thead><tr><th>Issue</th><th>What to Check</th></tr></thead>
         <tbody>
           <tr><td><code>ImagePullBackOff</code></td><td>Run <code>docker build -t construction-node-app:1.0 .</code> locally first.</td></tr>
-          <tr><td><code>CrashLoopBackOff</code></td><td><code>kubectl logs deployment/construction-app</code> — confirm app listens on port <code>3000</code>.</td></tr>
-          <tr><td><code>connection refused</code> from kubectl</td><td>Kubernetes not enabled or wrong context: <code>kubectl config use-context docker-desktop</code></td></tr>
-          <tr><td>Port forward fails</td><td>Try another port: <code>kubectl port-forward svc/construction-app-svc 9090:80</code></td></tr>
-          <tr><td>Pod stays Pending</td><td><code>kubectl describe pod ...</code> — check resources and cluster capacity.</td></tr>
-          <tr><td>K3s ImagePullBackOff</td><td>Import image: <code>docker save construction-node-app:1.0 | sudo k3s ctr images import -</code></td></tr>
+          <tr><td><code>CrashLoopBackOff</code></td><td><code>kubectl logs deployment/construction-app</code> — confirm app listens on <code>3000</code>.</td></tr>
+          <tr><td><code>connection refused</code></td><td><code>kubectl config use-context docker-desktop</code></td></tr>
+          <tr><td>Port forward fails</td><td>Try: <code>kubectl port-forward svc/construction-app-svc 9090:80</code></td></tr>
+          <tr><td>Pod stays Pending</td><td><code>kubectl describe pod ...</code> — check resources/capacity.</td></tr>
+          <tr><td>K3s ImagePullBackOff</td><td><code>docker save construction-node-app:1.0 | sudo k3s ctr images import -</code></td></tr>
         </tbody>
       </table>
     </div>
 
-    <!-- 15. LINUX SERVER -->
+    <!-- 15. LINUX -->
     <div class="section" id="linux">
       <h2 class="section-title">15. Deploying on a Linux Server</h2>
 
       <h3 class="sub-title">15.1 Get the Project</h3>
       <p><strong>Option A — Git clone:</strong></p>
-      <pre><code>sudo apt update && sudo apt install -y git
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>sudo apt update && sudo apt install -y git
 git clone https://github.com/ashararsi/Kubernetes.git
 cd Kubernetes</code></pre>
-      <p><strong>Option B — Copy with rsync:</strong></p>
-      <pre><code>rsync -avz --exclude 'node_modules' "./files (1)/" user@YOUR_SERVER_IP:~/Kubernetes/</code></pre>
+      </div>
 
-      <h3 class="sub-title">15.2 Install Docker Engine (Ubuntu)</h3>
-      <pre><code>sudo apt update
-sudo apt install -y ca-certificates curl
+      <h3 class="sub-title">15.2 Install Docker (Ubuntu)</h3>
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>sudo apt update && sudo apt install -y ca-certificates curl
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
-
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
   https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "${VERSION_CODENAME:-$VERSION_ID}") stable" \
   | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
 sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 sudo usermod -aG docker "$USER"</code></pre>
+      </div>
 
       <h3 class="sub-title">15.3 Run with Docker Only</h3>
-      <pre><code>docker build -t construction-node-app:1.0 .
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>docker build -t construction-node-app:1.0 .
 docker run --rm -d --name construction-welcome -p 3000:3000 construction-node-app:1.0</code></pre>
+      </div>
 
       <h3 class="sub-title">15.4 Kubernetes on Linux</h3>
-      <h4 class="mini-title">Path A — K3s (Single Server / VPS)</h4>
-      <pre><code>curl -sfL https://get.k3s.io | sh -
+      <h4 class="mini-title">Path A — K3s</h4>
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>curl -sfL https://get.k3s.io | sh -
 sudo mkdir -p ~/.kube
 sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
 sudo chown "$USER:$USER" ~/.kube/config
 export KUBECONFIG=~/.kube/config
-
 docker build -t construction-node-app:1.0 .
 docker save construction-node-app:1.0 | sudo k3s ctr images import -
 kubectl apply -f deployment.yaml -f service.yaml</code></pre>
+      </div>
 
       <h4 class="mini-title">Path B — MicroK8s</h4>
-      <pre><code>sudo snap install microk8s --classic
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>sudo snap install microk8s --classic
 sudo usermod -aG microk8s "$USER"
 microk8s status --wait-ready
 alias kubectl='microk8s kubectl'
 docker build -t construction-node-app:1.0 .
 docker save construction-node-app:1.0 | microk8s ctr image import -
 kubectl apply -f deployment.yaml -f service.yaml</code></pre>
+      </div>
 
       <h4 class="mini-title">Path C — Minikube</h4>
-      <pre><code>minikube start --driver=docker
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>minikube start --driver=docker
 eval $(minikube docker-env)
 docker build -t construction-node-app:1.0 .
 kubectl apply -f deployment.yaml -f service.yaml
 minikube service construction-app-svc --url</code></pre>
+      </div>
 
       <h3 class="sub-title">15.6 Linux Quick Checklist</h3>
       <table>
@@ -524,10 +874,10 @@ minikube service construction-app-svc --url</code></pre>
         <tbody>
           <tr><td>1</td><td>Install Docker.</td></tr>
           <tr><td>2</td><td>Clone or copy this repo; <code>cd</code> into it.</td></tr>
-          <tr><td>3</td><td><strong>Docker only:</strong> <code>docker build</code> → <code>docker run -p 3000:3000</code> → open firewall for <code>3000</code>.</td></tr>
-          <tr><td>4</td><td><strong>K3s / MicroK8s:</strong> <code>docker build</code> → import image → <code>kubectl apply</code>.</td></tr>
+          <tr><td>3</td><td><strong>Docker only:</strong> build → run <code>-p 3000:3000</code> → open firewall port <code>3000</code>.</td></tr>
+          <tr><td>4</td><td><strong>K3s / MicroK8s:</strong> build → import image → <code>kubectl apply</code>.</td></tr>
           <tr><td>5</td><td><strong>NodePort 30080:</strong> open in cloud security group + <code>ufw</code>.</td></tr>
-          <tr><td>6</td><td>Prefer <strong>HTTPS + domain</strong> in production.</td></tr>
+          <tr><td>6</td><td>Use <strong>HTTPS + domain</strong> in production, not raw NodePort.</td></tr>
         </tbody>
       </table>
     </div>
@@ -537,60 +887,117 @@ minikube service construction-app-svc --url</code></pre>
       <h2 class="section-title">16. Rocky Linux — Full Walkthrough</h2>
 
       <h3 class="sub-title">16.1 Update System</h3>
-      <pre><code>sudo dnf -y update
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>sudo dnf -y update
 sudo dnf -y install git curl ca-certificates</code></pre>
+      </div>
 
-      <h3 class="sub-title">16.2 Install Docker Engine</h3>
-      <pre><code>sudo dnf -y install dnf-plugins-core
+      <h3 class="sub-title">16.2 Install Docker</h3>
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>sudo dnf -y install dnf-plugins-core
 sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 sudo dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 sudo systemctl enable --now docker
 sudo usermod -aG docker "$USER"</code></pre>
+      </div>
 
       <h3 class="sub-title">16.3 Clone Project</h3>
-      <pre><code>cd ~
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>cd ~
 git clone https://github.com/ashararsi/Kubernetes.git
 cd Kubernetes</code></pre>
-
-      <h3 class="sub-title">16.4 Quick Sanity Check (Docker only)</h3>
-      <pre><code>docker build -t construction-node-app:1.0 .
-docker run --rm -d --name construction-welcome -p 3000:3000 construction-node-app:1.0
-curl -sS http://127.0.0.1:3000/health
-docker stop construction-welcome</code></pre>
+      </div>
 
       <h3 class="sub-title">16.5 Configure Firewall</h3>
-      <pre><code>sudo systemctl enable --now firewalld
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>sudo systemctl enable --now firewalld
 sudo firewall-cmd --permanent --add-port=6443/tcp
 sudo firewall-cmd --permanent --add-port=10250/tcp
 sudo firewall-cmd --permanent --add-port=8472/udp
 sudo firewall-cmd --permanent --add-port=30080/tcp
 sudo firewall-cmd --reload</code></pre>
+      </div>
 
       <h3 class="sub-title">16.6 Install K3s</h3>
-      <pre><code>curl -sfL https://get.k3s.io | sh -
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>curl -sfL https://get.k3s.io | sh -
 sudo systemctl status k3s --no-pager</code></pre>
+      </div>
 
       <h3 class="sub-title">16.7 Configure kubectl</h3>
-      <pre><code>mkdir -p ~/.kube
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>mkdir -p ~/.kube
 sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
 sudo chown "$(id -u):$(id -g)" ~/.kube/config
 chmod 600 ~/.kube/config
 export KUBECONFIG="$HOME/.kube/config"
 echo 'export KUBECONFIG="$HOME/.kube/config"' >> ~/.bashrc
 kubectl get nodes</code></pre>
+      </div>
 
-      <h3 class="sub-title">16.8 Build & Import Image into K3s</h3>
-      <pre><code>docker build -t construction-node-app:1.0 .
+      <h3 class="sub-title">16.8 Build &amp; Import Image</h3>
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>docker build -t construction-node-app:1.0 .
 docker save construction-node-app:1.0 | sudo k3s ctr images import -
 sudo k3s ctr images ls | grep construction-node-app</code></pre>
+      </div>
 
-      <h3 class="sub-title">16.9 Deploy to Kubernetes</h3>
-      <pre><code>kubectl apply -f deployment.yaml -f service.yaml
+      <h3 class="sub-title">16.9 Deploy</h3>
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>kubectl apply -f deployment.yaml -f service.yaml
 kubectl rollout status deployment/construction-app --timeout=120s
 kubectl get pods,svc -l app=construction-mgmt -o wide</code></pre>
+      </div>
 
-      <h3 class="sub-title">16.10 Open the App</h3>
-      <pre><code>curl -sS http://127.0.0.1:30080/health</code></pre>
+      <h3 class="sub-title">16.10 Verify</h3>
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>curl -sS http://127.0.0.1:30080/health</code></pre>
+      </div>
       <p>From your laptop: <code>http://ROCKY_SERVER_IP:30080</code></p>
 
       <h3 class="sub-title">16.11 Maintenance Commands</h3>
@@ -606,31 +1013,466 @@ kubectl get pods,svc -l app=construction-mgmt -o wide</code></pre>
       </table>
 
       <h3 class="sub-title">16.13 End-to-End Summary</h3>
-      <pre><code>cd ~/Kubernetes
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>cd ~/Kubernetes
 docker build -t construction-node-app:1.0 .
 docker save construction-node-app:1.0 | sudo k3s ctr images import -
 kubectl apply -f deployment.yaml -f service.yaml
 kubectl rollout status deployment/construction-app --timeout=120s
 kubectl get pods,svc -l app=construction-mgmt
 curl -sS http://127.0.0.1:30080/health</code></pre>
+      </div>
+    </div>
+
+    <!-- ARCHITECTURE DIAGRAM -->
+    <div class="section" id="architecture">
+      <h2 class="section-title">Architecture Overview</h2>
+      <p>This diagram shows how the different components interact when the app is deployed on Kubernetes.</p>
+      <div class="arch-diagram">
+        <div class="arch-row">
+          <div class="arch-box browser">
+            <div class="arch-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <div class="arch-label">Browser</div>
+            <div class="arch-sub">User / Client</div>
+          </div>
+          <div class="arch-arrow">
+            <div class="arch-arrow-line"></div>
+            <div class="arch-arrow-label">HTTP :8080</div>
+          </div>
+          <div class="arch-box service">
+            <div class="arch-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </div>
+            <div class="arch-label">K8s Service</div>
+            <div class="arch-sub">NodePort :30080<br/>ClusterIP :80</div>
+          </div>
+          <div class="arch-arrow">
+            <div class="arch-arrow-line"></div>
+            <div class="arch-arrow-label">:3000</div>
+          </div>
+          <div class="arch-box pod">
+            <div class="arch-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </div>
+            <div class="arch-label">Pod</div>
+            <div class="arch-sub">Node.js :3000<br/>construction-app</div>
+          </div>
+        </div>
+        <div class="arch-row arch-row-2">
+          <div class="arch-box deployment" style="margin-left:auto;margin-right:auto;">
+            <div class="arch-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </div>
+            <div class="arch-label">Deployment</div>
+            <div class="arch-sub">Manages Pods<br/>Replicas &amp; Rolling Updates</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CI/CD PIPELINE -->
+    <div class="section" id="cicd">
+      <h2 class="section-title">CI/CD Pipeline (GitHub Actions)</h2>
+      <p>Automate your build and deploy workflow using GitHub Actions. On every push to <code>main</code>, this pipeline builds the Docker image, pushes it to a registry, and rolls out a new deployment.</p>
+
+      <div class="pipeline">
+        <div class="pipe-step">
+          <div class="pipe-icon" style="background:rgba(88,166,255,.15);border-color:rgba(88,166,255,.3)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+          </div>
+          <div class="pipe-label">Trigger</div>
+          <div class="pipe-sub">Push to main</div>
+        </div>
+        <div class="pipe-connector"></div>
+        <div class="pipe-step">
+          <div class="pipe-icon" style="background:rgba(245,196,0,.15);border-color:rgba(245,196,0,.3)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f5c400" stroke-width="2" stroke-linecap="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          </div>
+          <div class="pipe-label">Build</div>
+          <div class="pipe-sub">docker build</div>
+        </div>
+        <div class="pipe-connector"></div>
+        <div class="pipe-step">
+          <div class="pipe-icon" style="background:rgba(63,185,80,.15);border-color:rgba(63,185,80,.3)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="pipe-label">Test</div>
+          <div class="pipe-sub">npm test</div>
+        </div>
+        <div class="pipe-connector"></div>
+        <div class="pipe-step">
+          <div class="pipe-icon" style="background:rgba(232,97,10,.15);border-color:rgba(232,97,10,.3)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e8610a" stroke-width="2" stroke-linecap="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+          </div>
+          <div class="pipe-label">Push</div>
+          <div class="pipe-sub">docker push</div>
+        </div>
+        <div class="pipe-connector"></div>
+        <div class="pipe-step">
+          <div class="pipe-icon" style="background:rgba(245,196,0,.15);border-color:rgba(245,196,0,.3)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f5c400" stroke-width="2" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="pipe-label">Deploy</div>
+          <div class="pipe-sub">kubectl apply</div>
+        </div>
+      </div>
+
+      <p>Example <code>.github/workflows/deploy.yml</code>:</p>
+      <div class="code-block">
+        <span class="code-label">yaml</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: yourusername/construction-node-app:${{ github.sha }}
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl set image deployment/construction-app \
+            web=yourusername/construction-node-app:${{ github.sha }}
+          kubectl rollout status deployment/construction-app</code></pre>
+      </div>
+    </div>
+
+    <!-- SECURITY HARDENING -->
+    <div class="section" id="security">
+      <h2 class="section-title">Security Hardening</h2>
+      <p>Apply these settings to reduce the attack surface of your deployment before going to production.</p>
+
+      <h3 class="sub-title">Pod Security Context</h3>
+      <p>Add a <code>securityContext</code> to your <code>deployment.yaml</code> container spec to enforce least-privilege execution:</p>
+      <div class="code-block">
+        <span class="code-label">yaml</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]</code></pre>
+      </div>
+
+      <h3 class="sub-title">Network Policy — Restrict Ingress</h3>
+      <p>Allow only traffic from the Service to reach your pods:</p>
+      <div class="code-block">
+        <span class="code-label">yaml</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: construction-app-netpol
+spec:
+  podSelector:
+    matchLabels:
+      app: construction-mgmt
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 3000</code></pre>
+      </div>
+
+      <h3 class="sub-title">Security Checklist</h3>
+      <table>
+        <thead><tr><th>Area</th><th>Recommendation</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Container user</td><td>Run as non-root (<code>USER node</code> in Dockerfile)</td><td><span class="pill green">Done ✓</span></td></tr>
+          <tr><td>Image size</td><td>Use <code>node:20-alpine</code> to minimize surface area</td><td><span class="pill green">Done ✓</span></td></tr>
+          <tr><td>Read-only FS</td><td>Set <code>readOnlyRootFilesystem: true</code></td><td><span class="pill orange">Recommended</span></td></tr>
+          <tr><td>Secrets</td><td>Use Kubernetes Secrets, not hardcoded env vars</td><td><span class="pill orange">Recommended</span></td></tr>
+          <tr><td>TLS</td><td>Use Ingress + cert-manager for HTTPS</td><td><span class="pill orange">Recommended</span></td></tr>
+          <tr><td>Network Policy</td><td>Restrict pod-to-pod traffic</td><td><span class="pill orange">Recommended</span></td></tr>
+          <tr><td>Image scanning</td><td>Use <code>docker scout</code> or Trivy to scan for CVEs</td><td><span class="pill orange">Recommended</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PRODUCTION CHECKLIST -->
+    <div class="section" id="prod-checklist">
+      <h2 class="section-title">Production Readiness Checklist</h2>
+      <p>Before going live, verify each item below. Green items are already implemented in this project.</p>
+
+      <div class="checklist-grid">
+        <div class="check-card done">
+          <div class="check-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="check-content">
+            <div class="check-title">Health Probes</div>
+            <div class="check-desc">Liveness and readiness probes configured on <code>/health</code></div>
+          </div>
+        </div>
+        <div class="check-card done">
+          <div class="check-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="check-content">
+            <div class="check-title">Resource Limits</div>
+            <div class="check-desc">CPU and memory requests/limits set in <code>deployment.yaml</code></div>
+          </div>
+        </div>
+        <div class="check-card done">
+          <div class="check-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="check-content">
+            <div class="check-title">Non-Root User</div>
+            <div class="check-desc">Container runs as <code>node</code> user, not root</div>
+          </div>
+        </div>
+        <div class="check-card done">
+          <div class="check-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="check-content">
+            <div class="check-title">Minimal Base Image</div>
+            <div class="check-desc">Uses <code>node:20-alpine</code> — small, fewer CVEs</div>
+          </div>
+        </div>
+        <div class="check-card todo">
+          <div class="check-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f5c400" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="check-content">
+            <div class="check-title">Multiple Replicas</div>
+            <div class="check-desc">Set <code>spec.replicas: 2</code> to eliminate single point of failure</div>
+          </div>
+        </div>
+        <div class="check-card todo">
+          <div class="check-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f5c400" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="check-content">
+            <div class="check-title">Ingress + TLS</div>
+            <div class="check-desc">Replace NodePort with Ingress controller and cert-manager for HTTPS</div>
+          </div>
+        </div>
+        <div class="check-card todo">
+          <div class="check-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f5c400" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="check-content">
+            <div class="check-title">Dedicated Namespace</div>
+            <div class="check-desc">Deploy into a named namespace, not <code>default</code></div>
+          </div>
+        </div>
+        <div class="check-card todo">
+          <div class="check-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f5c400" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="check-content">
+            <div class="check-title">CI/CD Pipeline</div>
+            <div class="check-desc">Automate builds and deployments via GitHub Actions</div>
+          </div>
+        </div>
+        <div class="check-card todo">
+          <div class="check-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f5c400" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="check-content">
+            <div class="check-title">Monitoring &amp; Alerts</div>
+            <div class="check-desc">Add Prometheus metrics scraping and Grafana dashboards</div>
+          </div>
+        </div>
+        <div class="check-card todo">
+          <div class="check-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f5c400" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="check-content">
+            <div class="check-title">Image Registry</div>
+            <div class="check-desc">Push to Docker Hub / GHCR instead of using local images</div>
+          </div>
+        </div>
+        <div class="check-card todo">
+          <div class="check-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f5c400" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="check-content">
+            <div class="check-title">PodDisruptionBudget</div>
+            <div class="check-desc">Ensure at least 1 pod stays available during node maintenance</div>
+          </div>
+        </div>
+        <div class="check-card todo">
+          <div class="check-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f5c400" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="check-content">
+            <div class="check-title">Horizontal Pod Autoscaler</div>
+            <div class="check-desc">Scale pods automatically based on CPU/memory usage</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADVANCED: HPA & INGRESS -->
+    <div class="section" id="advanced">
+      <h2 class="section-title">Advanced Kubernetes Configurations</h2>
+
+      <h3 class="sub-title">Horizontal Pod Autoscaler (HPA)</h3>
+      <p>Automatically scale the number of pods when CPU usage exceeds a threshold:</p>
+      <div class="code-block">
+        <span class="code-label">yaml</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: construction-app-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: construction-app
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60</code></pre>
+      </div>
+
+      <h3 class="sub-title">Ingress with TLS (NGINX)</h3>
+      <p>Replace NodePort with a proper Ingress resource for HTTPS access with a custom domain:</p>
+      <div class="code-block">
+        <span class="code-label">yaml</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: construction-app-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - construction.yourdomain.com
+      secretName: construction-app-tls
+  rules:
+    - host: construction.yourdomain.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: construction-app-svc
+                port:
+                  number: 80</code></pre>
+      </div>
+
+      <h3 class="sub-title">PodDisruptionBudget</h3>
+      <p>Ensure at least one pod stays running during node drains or cluster upgrades:</p>
+      <div class="code-block">
+        <span class="code-label">yaml</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: construction-app-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: construction-mgmt</code></pre>
+      </div>
+
+      <h3 class="sub-title">Useful kubectl Commands (Advanced)</h3>
+      <table>
+        <thead><tr><th>Task</th><th>Command</th></tr></thead>
+        <tbody>
+          <tr><td>View HPA status</td><td><code>kubectl get hpa</code></td></tr>
+          <tr><td>Watch pods live</td><td><code>kubectl get pods -w -l app=construction-mgmt</code></td></tr>
+          <tr><td>View resource usage</td><td><code>kubectl top pods -l app=construction-mgmt</code></td></tr>
+          <tr><td>Exec into pod</td><td><code>kubectl exec -it $(kubectl get pod -l app=construction-mgmt -o name | head -1) -- sh</code></td></tr>
+          <tr><td>Copy file from pod</td><td><code>kubectl cp &lt;pod&gt;:/app/file.txt ./file.txt</code></td></tr>
+          <tr><td>Rollback deployment</td><td><code>kubectl rollout undo deployment/construction-app</code></td></tr>
+          <tr><td>View rollout history</td><td><code>kubectl rollout history deployment/construction-app</code></td></tr>
+          <tr><td>Force pod restart</td><td><code>kubectl rollout restart deployment/construction-app</code></td></tr>
+          <tr><td>Delete all pods (force restart)</td><td><code>kubectl delete pods -l app=construction-mgmt</code></td></tr>
+          <tr><td>Events (debug)</td><td><code>kubectl get events --sort-by='.lastTimestamp'</code></td></tr>
+        </tbody>
+      </table>
     </div>
 
     <!-- QUICK REFERENCE -->
     <div class="section">
-      <h2 class="section-title">Quick Reference (Copy-Paste)</h2>
+      <h2 class="section-title">Quick Reference</h2>
       <div class="callout warn">
-        <p>Run these commands from the project folder to build, deploy, and access the app.</p>
+        <p>Run from the project folder to build, deploy, and access the app in one go.</p>
       </div>
-      <pre><code>cd "/Users/apple/Downloads/files (1)"
+      <div class="code-block">
+        <span class="code-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <pre><code>cd "/Users/apple/Downloads/files (1)"
 docker build -t construction-node-app:1.0 .
 kubectl apply -f deployment.yaml -f service.yaml
 kubectl get pods,svc -l app=construction-mgmt
 kubectl port-forward svc/construction-app-svc 8080:80</code></pre>
+      </div>
       <p>Then open <a href="http://localhost:8080" target="_blank">http://localhost:8080</a></p>
     </div>
 
   </main>
 </div>
+
+<!-- BACK TO TOP -->
+<button id="back-top" title="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="18 15 12 9 6 15"/>
+  </svg>
+</button>
 
 <!-- FOOTER -->
 <footer>
@@ -639,7 +1481,7 @@ kubectl port-forward svc/construction-app-svc 8080:80</code></pre>
 </footer>
 
 <script>
-  // Inject live pod info from server
+  // ── Pod info ──
   fetch('/api/info')
     .then(r => r.json())
     .then(d => {
@@ -647,6 +1489,101 @@ kubectl port-forward svc/construction-app-svc 8080:80</code></pre>
       document.getElementById('footer-pod').textContent = 'Pod: ' + d.host + ' · Namespace: default';
     })
     .catch(() => {});
+
+  // ── Reading progress bar ──
+  const bar = document.getElementById('progress-bar');
+  function updateProgress() {
+    const scrollTop = window.scrollY;
+    const docH = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (docH > 0 ? (scrollTop / docH) * 100 : 0) + '%';
+  }
+
+  // ── Back to top ──
+  const backTop = document.getElementById('back-top');
+  window.addEventListener('scroll', () => {
+    updateProgress();
+    backTop.classList.toggle('visible', window.scrollY > 400);
+  }, { passive: true });
+
+  // ── Active TOC highlight (IntersectionObserver) ──
+  const sections = document.querySelectorAll('.section[id]');
+  const tocLinks = document.querySelectorAll('.toc a');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        tocLinks.forEach(a => a.classList.remove('active'));
+        const active = document.querySelector('.toc a[href="#' + entry.target.id + '"]');
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => observer.observe(s));
+
+  // ── Copy button ──
+  function copyCode(btn) {
+    const code = btn.closest('.code-block').querySelector('code').innerText;
+    navigator.clipboard.writeText(code).then(() => {
+      btn.classList.add('copied');
+      btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+      }, 2000);
+    });
+  }
+
+  // ── Search / filter ──
+  const searchInput = document.getElementById('search');
+  const noResult = document.getElementById('no-result');
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim().toLowerCase();
+    // Remove old highlights
+    document.querySelectorAll('mark').forEach(m => {
+      m.replaceWith(m.textContent);
+    });
+    if (!q) {
+      sections.forEach(s => s.style.display = '');
+      noResult.style.display = 'none';
+      return;
+    }
+    let any = false;
+    sections.forEach(s => {
+      const text = s.textContent.toLowerCase();
+      if (text.includes(q)) {
+        s.style.display = '';
+        any = true;
+        // Highlight matches in text nodes
+        highlight(s, q);
+      } else {
+        s.style.display = 'none';
+      }
+    });
+    noResult.style.display = any ? 'none' : 'block';
+  });
+
+  function highlight(node, q) {
+    if (node.nodeType === 3) {
+      const idx = node.textContent.toLowerCase().indexOf(q);
+      if (idx === -1) return;
+      const mark = document.createElement('mark');
+      const after = node.splitText(idx);
+      after.splitText(q.length);
+      mark.appendChild(after.cloneNode(true));
+      after.parentNode.replaceChild(mark, after);
+    } else if (node.nodeType === 1 && !['SCRIPT','STYLE','CODE','PRE'].includes(node.tagName)) {
+      Array.from(node.childNodes).forEach(c => highlight(c, q));
+    }
+  }
+
+  // ── Mobile hamburger ──
+  const hamburger = document.getElementById('hamburger');
+  const sidebar = document.getElementById('sidebar');
+  hamburger.addEventListener('click', () => sidebar.classList.toggle('open'));
+  document.addEventListener('click', e => {
+    if (!sidebar.contains(e.target) && !hamburger.contains(e.target)) {
+      sidebar.classList.remove('open');
+    }
+  });
 </script>
 
 </body>

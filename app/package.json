@@ -5,13 +5,12 @@
   "description": "Welcome page served by Node for Kubernetes demo",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node api.js && node server.js"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
-    "express": "^4.21.2",
-    "marked": "^12.0.2"
+    "express": "^4.21.2"
   }
 }
