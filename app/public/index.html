@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deployment Guide — IronFrame Construction App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --surface2: #1c2128;
+      --border:   #30363d;
+      --accent:   #f5c400;
+      --accent2:  #e8610a;
+      --green:    #3fb950;
+      --blue:     #58a6ff;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Inter", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── TOPNAV ── */
+    .topnav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(13,17,23,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      height: 60px; padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand { display: flex; align-items: center; gap: .75rem; text-decoration: none; }
+    .nav-logo {
+      width: 34px; height: 34px; background: var(--accent);
+      clip-path: polygon(0 25%,50% 0%,100% 25%,100% 75%,50% 100%,0 75%);
+      display: grid; place-items: center;
+    }
+    .nav-logo span { font-family:"JetBrains Mono"; font-size:.75rem; font-weight:700; color:#000; }
+    .nav-title { font-size:1rem; font-weight:600; color:var(--text); }
+    .nav-title small { font-size:.72rem; font-weight:400; color:var(--muted); margin-left:.4rem; }
+    .pod-chip {
+      display:flex; align-items:center; gap:.4rem;
+      font-family:"JetBrains Mono"; font-size:.72rem; color:var(--muted);
+      background:var(--surface2); border:1px solid var(--border);
+      padding:.3rem .75rem; border-radius:20px;
+    }
+    .pod-dot {
+      width:6px; height:6px; border-radius:50%;
+      background:var(--green); box-shadow:0 0 6px var(--green);
+      animation:pulse 2s infinite;
+    }
+
+    /* ── LAYOUT ── */
+    .layout {
+      display:flex; flex:1;
+      max-width:1380px; margin:0 auto; width:100%; padding:0 1.5rem;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width:260px; flex-shrink:0;
+      padding:2rem 1rem 2rem 0;
+      position:sticky; top:60px;
+      height:calc(100vh - 60px); overflow-y:auto;
+    }
+    .sidebar::-webkit-scrollbar { width:4px; }
+    .sidebar::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+    .toc-label {
+      font-size:.62rem; font-weight:700; letter-spacing:.15em;
+      text-transform:uppercase; color:var(--muted);
+      padding-left:.75rem; margin-bottom:.75rem;
+    }
+    .toc { list-style:none; }
+    .toc li a {
+      display:block; padding:.35rem .75rem;
+      font-size:.82rem; color:var(--muted); text-decoration:none;
+      border-left:2px solid transparent; border-radius:0 6px 6px 0;
+      transition:all .15s;
+    }
+    .toc li a:hover { color:var(--text); background:var(--surface); border-left-color:var(--accent); }
+
+    /* ── MAIN ── */
+    .main {
+      flex:1; min-width:0;
+      padding:2rem 0 4rem 2rem;
+      border-left:1px solid var(--border);
+    }
+
+    /* ── HERO ── */
+    .hero {
+      background:linear-gradient(135deg,var(--surface),var(--surface2));
+      border:1px solid var(--border); border-radius:12px;
+      padding:2rem 2.5rem; margin-bottom:2.5rem;
+      display:flex; align-items:center; gap:2rem;
+    }
+    .hero-icon {
+      width:64px; height:64px; flex-shrink:0; border-radius:12px;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      display:grid; place-items:center; font-size:1.8rem;
+    }
+    .hero-title { font-size:1.6rem; font-weight:700; margin-bottom:.4rem; }
+    .hero-sub { font-size:.9rem; color:var(--muted); line-height:1.6; }
+    .badges { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.75rem; }
+    .badge {
+      font-size:.68rem; font-weight:700; letter-spacing:.08em;
+      text-transform:uppercase; padding:.2rem .65rem; border-radius:4px;
+    }
+    .b-yellow { background:rgba(245,196,0,.15); color:var(--accent);  border:1px solid rgba(245,196,0,.3); }
+    .b-blue   { background:rgba(88,166,255,.15); color:var(--blue);    border:1px solid rgba(88,166,255,.3); }
+    .b-green  { background:rgba(63,185,80,.15);  color:var(--green);   border:1px solid rgba(63,185,80,.3); }
+    .b-orange { background:rgba(232,97,10,.15);  color:var(--accent2); border:1px solid rgba(232,97,10,.3); }
+
+    /* ── SECTIONS ── */
+    .section { margin-bottom:3rem; }
+
+    h2.section-title {
+      font-size:1.25rem; font-weight:700; color:var(--text);
+      padding-bottom:.6rem; margin-bottom:1.25rem;
+      border-bottom:2px solid var(--border);
+      display:flex; align-items:center; gap:.6rem;
+    }
+    h2.section-title::before {
+      content:''; display:inline-block;
+      width:4px; height:1.1rem; background:var(--accent); border-radius:2px; flex-shrink:0;
+    }
+    h3.sub-title {
+      font-size:1rem; font-weight:600; color:var(--text);
+      margin:1.5rem 0 .75rem;
+    }
+    h4.mini-title {
+      font-size:.8rem; font-weight:600; text-transform:uppercase;
+      letter-spacing:.08em; color:var(--muted); margin:1.25rem 0 .5rem;
+    }
+
+    p { font-size:.9rem; line-height:1.75; color:#c9d1d9; margin-bottom:1rem; }
+    a { color:var(--blue); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+
+    ul, ol { padding-left:1.5rem; margin-bottom:1rem; }
+    li { font-size:.9rem; line-height:1.75; color:#c9d1d9; margin-bottom:.2rem; }
+    strong { color:var(--text); }
+
+    /* code */
+    code {
+      font-family:"JetBrains Mono",monospace; font-size:.82rem;
+      background:var(--surface2); border:1px solid var(--border);
+      color:var(--accent); padding:.15rem .45rem; border-radius:4px;
+    }
+    pre {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:8px; padding:1.2rem 1.5rem; margin:1rem 0 1.5rem;
+      overflow-x:auto; position:relative;
+    }
+    pre::before {
+      content:'bash'; position:absolute; top:.5rem; right:.75rem;
+      font-family:"JetBrains Mono"; font-size:.6rem; color:var(--muted);
+      text-transform:uppercase; letter-spacing:.1em;
+    }
+    pre code {
+      background:none; border:none; padding:0;
+      color:#e6edf3; font-size:.82rem;
+    }
+
+    /* table */
+    table { width:100%; border-collapse:collapse; margin:1rem 0 1.5rem; font-size:.85rem; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+    th { background:var(--surface2); padding:.7rem 1rem; text-align:left; font-size:.7rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); }
+    td { padding:.7rem 1rem; border-bottom:1px solid rgba(48,54,61,.5); color:#c9d1d9; vertical-align:top; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:rgba(245,196,0,.03); }
+
+    hr { border:none; border-top:1px solid var(--border); margin:2rem 0; }
+
+    /* callout boxes */
+    .callout {
+      border-left:3px solid var(--accent); background:var(--surface);
+      padding:.9rem 1.2rem; border-radius:0 8px 8px 0; margin:1rem 0 1.5rem;
+    }
+    .callout.info  { border-left-color:var(--blue); }
+    .callout.warn  { border-left-color:var(--accent2); }
+    .callout p { margin:0; color:var(--muted); font-size:.88rem; }
+
+    /* checklist */
+    .checklist { list-style:none; padding:0; }
+    .checklist li { display:flex; gap:.6rem; align-items:flex-start; margin-bottom:.5rem; font-size:.9rem; color:#c9d1d9; }
+    .checklist li::before { content:'✓'; color:var(--green); font-weight:700; flex-shrink:0; margin-top:.1rem; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top:1px solid var(--border); background:var(--surface);
+      padding:1rem 2rem; display:flex; justify-content:space-between; align-items:center;
+      font-family:"JetBrains Mono"; font-size:.7rem; color:var(--muted);
+    }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+    .hero  { animation:fadeIn .4s ease both; }
+    .main  { animation:fadeIn .4s .08s ease both; }
+
+    @media(max-width:768px) {
+      .sidebar { display:none; }
+      .main { padding:1.5rem 0 3rem; border-left:none; }
+      .hero { flex-direction:column; gap:1rem; padding:1.5rem; }
+      .pod-chip { display:none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOPNAV -->
+<nav class="topnav">
+  <a class="nav-brand" href="#">
+    <div class="nav-logo"><span>IF</span></div>
+    <span class="nav-title">IronFrame <small>Construction App</small></span>
+  </a>
+  <div class="pod-chip">
+    <div class="pod-dot"></div>
+    <span id="pod-info">port: 3000</span>
+  </div>
+</nav>
+
+<div class="layout">
+
+  <!-- SIDEBAR TOC -->
+  <aside class="sidebar">
+    <div class="toc-label">Contents</div>
+    <ul class="toc">
+      <li><a href="#overview">1. Overview</a></li>
+      <li><a href="#folder-structure">2. Folder Structure</a></li>
+      <li><a href="#prerequisites">3. Prerequisites</a></li>
+      <li><a href="#docker-only">4. Docker Only</a></li>
+      <li><a href="#k8s-setup">5. Kubernetes Setup</a></li>
+      <li><a href="#build-deploy">6. Build &amp; Deploy</a></li>
+      <li><a href="#open-app">7. Open the App</a></li>
+      <li><a href="#day-to-day">8. Day-to-Day Commands</a></li>
+      <li><a href="#scale">9. Scale Replicas</a></li>
+      <li><a href="#update">10. Update Image</a></li>
+      <li><a href="#cleanup">11. Cleanup</a></li>
+      <li><a href="#whats-next">12. What's Next</a></li>
+      <li><a href="#troubleshoot">13. Troubleshooting</a></li>
+      <li><a href="#linux">15. Linux Server</a></li>
+      <li><a href="#rocky">16. Rocky Linux</a></li>
+    </ul>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-icon">🏗️</div>
+      <div>
+        <div class="hero-title">Deployment Guide</div>
+        <div class="hero-sub">
+          Step-by-step reference for deploying the Node.js construction app
+          with <strong>Docker</strong> and <strong>Kubernetes</strong>.
+        </div>
+        <div class="badges">
+          <span class="badge b-yellow">Node.js 20</span>
+          <span class="badge b-blue">Docker</span>
+          <span class="badge b-green">Kubernetes</span>
+          <span class="badge b-orange">K3s / MicroK8s</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1. OVERVIEW -->
+    <div class="section" id="overview">
+      <h2 class="section-title">1. Overview</h2>
+      <table>
+        <thead><tr><th>Component</th><th>Detail</th></tr></thead>
+        <tbody>
+          <tr><td><strong>App</strong></td><td>Node.js 20 + Express — welcome HTML on <code>/</code>, <code>/health</code> for probes</td></tr>
+          <tr><td><strong>Container port</strong></td><td><code>3000</code></td></tr>
+          <tr><td><strong>Kubernetes image</strong></td><td><code>construction-node-app:1.0</code> (local build; <code>imagePullPolicy: IfNotPresent</code>)</td></tr>
+          <tr><td><strong>Service</strong></td><td><code>construction-app-svc</code> — port <code>80</code> → pod <code>3000</code>, NodePort <code>30080</code></td></tr>
+          <tr><td><strong>Deployment</strong></td><td><code>construction-app</code> — label <code>app: construction-mgmt</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 2. FOLDER STRUCTURE -->
+    <div class="section" id="folder-structure">
+      <h2 class="section-title">2. Folder Structure</h2>
+      <pre><code>.
+├── app/
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── public/
+│   │   └── index.html        # This page
+│   └── server.js             # Express server
+├── Dockerfile
+├── .dockerignore
+├── deployment.yaml
+├── service.yaml
+├── configmap.yaml
+└── DEPLOYMENT-GUIDE.md</code></pre>
+    </div>
+
+    <!-- 3. PREREQUISITES -->
+    <div class="section" id="prerequisites">
+      <h2 class="section-title">3. Prerequisites</h2>
+      <ul class="checklist">
+        <li><strong>Docker Desktop</strong> installed and running (whale icon in menu bar)</li>
+        <li><strong>Kubernetes</strong> enabled in Docker Desktop: <em>Settings → Kubernetes → Enable Kubernetes</em></li>
+        <li><strong>kubectl</strong> (bundled with Docker Desktop)</li>
+      </ul>
+      <div class="callout">
+        <p>Open a terminal and <code>cd "/Users/apple/Downloads/files (1)"</code> before running any commands.</p>
+      </div>
+    </div>
+
+    <!-- 4. DOCKER ONLY -->
+    <div class="section" id="docker-only">
+      <h2 class="section-title">4. Docker Only (no Kubernetes)</h2>
+      <p>Build the image:</p>
+      <pre><code>docker build -t construction-node-app:1.0 .</code></pre>
+      <p>Run a container:</p>
+      <pre><code>docker run --rm -d --name construction-welcome -p 3000:3000 construction-node-app:1.0</code></pre>
+      <table>
+        <thead><tr><th>URL</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td><code>http://localhost:3000</code></td><td>App home page</td></tr>
+          <tr><td><code>http://localhost:3000/health</code></td><td>Returns <code>ok</code></td></tr>
+        </tbody>
+      </table>
+      <p>Stop:</p>
+      <pre><code>docker stop construction-welcome</code></pre>
+    </div>
+
+    <!-- 5. KUBERNETES SETUP -->
+    <div class="section" id="k8s-setup">
+      <h2 class="section-title">5. Kubernetes — First-Time Setup</h2>
+      <ol>
+        <li>Open Docker Desktop and <strong>enable Kubernetes</strong>, wait until fully ready.</li>
+        <li>Check context:
+          <pre><code>kubectl config get-contexts</code></pre>
+          Active context (e.g. <code>docker-desktop</code>) should be marked <strong>CURRENT</strong>.
+        </li>
+        <li>Verify the cluster:
+          <pre><code>kubectl cluster-info
+kubectl get nodes</code></pre>
+        </li>
+      </ol>
+    </div>
+
+    <!-- 6. BUILD & DEPLOY -->
+    <div class="section" id="build-deploy">
+      <h2 class="section-title">6. Build Image and Deploy to Cluster</h2>
+      <pre><code>cd "/Users/apple/Downloads/files (1)"
+
+docker build -t construction-node-app:1.0 .
+
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml</code></pre>
+      <p>Check status:</p>
+      <pre><code>kubectl rollout status deployment/construction-app
+kubectl get pods,svc -l app=construction-mgmt</code></pre>
+      <div class="callout info">
+        <p>You should see the pod <strong>READY 1/1</strong> and <strong>Running</strong>.</p>
+      </div>
+    </div>
+
+    <!-- 7. OPEN THE APP -->
+    <div class="section" id="open-app">
+      <h2 class="section-title">7. Open the App in a Browser</h2>
+      <h3 class="sub-title">Option A — Port Forward (Recommended)</h3>
+      <pre><code>kubectl port-forward svc/construction-app-svc 8080:80</code></pre>
+      <p>Open <a href="http://localhost:8080" target="_blank">http://localhost:8080</a> in your browser. Press <code>Ctrl+C</code> to stop.</p>
+      <h3 class="sub-title">Option B — NodePort</h3>
+      <p>Service maps <strong>NodePort <code>30080</code></strong>. On Docker Desktop, Option A is more reliable.</p>
+    </div>
+
+    <!-- 8. DAY-TO-DAY -->
+    <div class="section" id="day-to-day">
+      <h2 class="section-title">8. Day-to-Day Commands</h2>
+      <table>
+        <thead><tr><th>Task</th><th>Command</th></tr></thead>
+        <tbody>
+          <tr><td>List pods</td><td><code>kubectl get pods -l app=construction-mgmt</code></td></tr>
+          <tr><td>Logs (follow)</td><td><code>kubectl logs -f deployment/construction-app</code></td></tr>
+          <tr><td>Describe (debug)</td><td><code>kubectl describe pod -l app=construction-mgmt</code></td></tr>
+          <tr><td>Service</td><td><code>kubectl get svc construction-app-svc</code></td></tr>
+          <tr><td>Deployment detail</td><td><code>kubectl describe deployment construction-app</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 9. SCALE -->
+    <div class="section" id="scale">
+      <h2 class="section-title">9. Scale Replicas</h2>
+      <pre><code>kubectl scale deployment construction-app --replicas=2
+kubectl get pods -l app=construction-mgmt</code></pre>
+      <p>To make it permanent, edit <code>spec.replicas</code> in <code>deployment.yaml</code> and run <code>kubectl apply -f deployment.yaml</code> again.</p>
+    </div>
+
+    <!-- 10. UPDATE -->
+    <div class="section" id="update">
+      <h2 class="section-title">10. Update After a New Image</h2>
+      <ol>
+        <li>Build with a new tag:
+          <pre><code>docker build -t construction-node-app:1.1 .</code></pre>
+        </li>
+        <li>Set <code>image: construction-node-app:1.1</code> in <code>deployment.yaml</code>, then:
+          <pre><code>kubectl apply -f deployment.yaml
+kubectl rollout status deployment/construction-app</code></pre>
+        </li>
+      </ol>
+      <p>If keeping the same tag, just restart pods:</p>
+      <pre><code>kubectl rollout restart deployment/construction-app</code></pre>
+    </div>
+
+    <!-- 11. CLEANUP -->
+    <div class="section" id="cleanup">
+      <h2 class="section-title">11. Cleanup</h2>
+      <pre><code>kubectl delete -f service.yaml --ignore-not-found
+kubectl delete -f deployment.yaml --ignore-not-found</code></pre>
+      <p>Docker-only container:</p>
+      <pre><code>docker rm -f construction-welcome 2>/dev/null</code></pre>
+    </div>
+
+    <!-- 12. WHAT'S NEXT -->
+    <div class="section" id="whats-next">
+      <h2 class="section-title">12. What to Learn or Build Next</h2>
+      <ol>
+        <li><strong>Registry</strong> — Push to Docker Hub / GHCR; use full image name in Deployment.</li>
+        <li><strong>Secrets / ConfigMap</strong> — DB URLs, API keys; avoid hardcoding.</li>
+        <li><strong>Namespace</strong> — <code>kubectl create namespace construction</code></li>
+        <li><strong>Ingress + TLS</strong> — Public hostname + HTTPS (cert-manager + Let's Encrypt).</li>
+        <li><strong>CI/CD</strong> — GitHub Actions: build → push → deploy.</li>
+        <li><strong>Resource limits</strong> — Tune <code>resources</code> in <code>deployment.yaml</code>.</li>
+        <li><strong>Monitoring</strong> — Centralised logs; Prometheus/Grafana.</li>
+      </ol>
+    </div>
+
+    <!-- 13. TROUBLESHOOTING -->
+    <div class="section" id="troubleshoot">
+      <h2 class="section-title">13. Troubleshooting</h2>
+      <table>
+        <thead><tr><th>Issue</th><th>What to Check</th></tr></thead>
+        <tbody>
+          <tr><td><code>ImagePullBackOff</code></td><td>Run <code>docker build -t construction-node-app:1.0 .</code> locally first.</td></tr>
+          <tr><td><code>CrashLoopBackOff</code></td><td><code>kubectl logs deployment/construction-app</code> — confirm app listens on port <code>3000</code>.</td></tr>
+          <tr><td><code>connection refused</code> from kubectl</td><td>Kubernetes not enabled or wrong context: <code>kubectl config use-context docker-desktop</code></td></tr>
+          <tr><td>Port forward fails</td><td>Try another port: <code>kubectl port-forward svc/construction-app-svc 9090:80</code></td></tr>
+          <tr><td>Pod stays Pending</td><td><code>kubectl describe pod ...</code> — check resources and cluster capacity.</td></tr>
+          <tr><td>K3s ImagePullBackOff</td><td>Import image: <code>docker save construction-node-app:1.0 | sudo k3s ctr images import -</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 15. LINUX SERVER -->
+    <div class="section" id="linux">
+      <h2 class="section-title">15. Deploying on a Linux Server</h2>
+
+      <h3 class="sub-title">15.1 Get the Project</h3>
+      <p><strong>Option A — Git clone:</strong></p>
+      <pre><code>sudo apt update && sudo apt install -y git
+git clone https://github.com/ashararsi/Kubernetes.git
+cd Kubernetes</code></pre>
+      <p><strong>Option B — Copy with rsync:</strong></p>
+      <pre><code>rsync -avz --exclude 'node_modules' "./files (1)/" user@YOUR_SERVER_IP:~/Kubernetes/</code></pre>
+
+      <h3 class="sub-title">15.2 Install Docker Engine (Ubuntu)</h3>
+      <pre><code>sudo apt update
+sudo apt install -y ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+  https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "${VERSION_CODENAME:-$VERSION_ID}") stable" \
+  | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo usermod -aG docker "$USER"</code></pre>
+
+      <h3 class="sub-title">15.3 Run with Docker Only</h3>
+      <pre><code>docker build -t construction-node-app:1.0 .
+docker run --rm -d --name construction-welcome -p 3000:3000 construction-node-app:1.0</code></pre>
+
+      <h3 class="sub-title">15.4 Kubernetes on Linux</h3>
+      <h4 class="mini-title">Path A — K3s (Single Server / VPS)</h4>
+      <pre><code>curl -sfL https://get.k3s.io | sh -
+sudo mkdir -p ~/.kube
+sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+sudo chown "$USER:$USER" ~/.kube/config
+export KUBECONFIG=~/.kube/config
+
+docker build -t construction-node-app:1.0 .
+docker save construction-node-app:1.0 | sudo k3s ctr images import -
+kubectl apply -f deployment.yaml -f service.yaml</code></pre>
+
+      <h4 class="mini-title">Path B — MicroK8s</h4>
+      <pre><code>sudo snap install microk8s --classic
+sudo usermod -aG microk8s "$USER"
+microk8s status --wait-ready
+alias kubectl='microk8s kubectl'
+docker build -t construction-node-app:1.0 .
+docker save construction-node-app:1.0 | microk8s ctr image import -
+kubectl apply -f deployment.yaml -f service.yaml</code></pre>
+
+      <h4 class="mini-title">Path C — Minikube</h4>
+      <pre><code>minikube start --driver=docker
+eval $(minikube docker-env)
+docker build -t construction-node-app:1.0 .
+kubectl apply -f deployment.yaml -f service.yaml
+minikube service construction-app-svc --url</code></pre>
+
+      <h3 class="sub-title">15.6 Linux Quick Checklist</h3>
+      <table>
+        <thead><tr><th>Step</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Install Docker.</td></tr>
+          <tr><td>2</td><td>Clone or copy this repo; <code>cd</code> into it.</td></tr>
+          <tr><td>3</td><td><strong>Docker only:</strong> <code>docker build</code> → <code>docker run -p 3000:3000</code> → open firewall for <code>3000</code>.</td></tr>
+          <tr><td>4</td><td><strong>K3s / MicroK8s:</strong> <code>docker build</code> → import image → <code>kubectl apply</code>.</td></tr>
+          <tr><td>5</td><td><strong>NodePort 30080:</strong> open in cloud security group + <code>ufw</code>.</td></tr>
+          <tr><td>6</td><td>Prefer <strong>HTTPS + domain</strong> in production.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 16. ROCKY LINUX -->
+    <div class="section" id="rocky">
+      <h2 class="section-title">16. Rocky Linux — Full Walkthrough</h2>
+
+      <h3 class="sub-title">16.1 Update System</h3>
+      <pre><code>sudo dnf -y update
+sudo dnf -y install git curl ca-certificates</code></pre>
+
+      <h3 class="sub-title">16.2 Install Docker Engine</h3>
+      <pre><code>sudo dnf -y install dnf-plugins-core
+sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo systemctl enable --now docker
+sudo usermod -aG docker "$USER"</code></pre>
+
+      <h3 class="sub-title">16.3 Clone Project</h3>
+      <pre><code>cd ~
+git clone https://github.com/ashararsi/Kubernetes.git
+cd Kubernetes</code></pre>
+
+      <h3 class="sub-title">16.4 Quick Sanity Check (Docker only)</h3>
+      <pre><code>docker build -t construction-node-app:1.0 .
+docker run --rm -d --name construction-welcome -p 3000:3000 construction-node-app:1.0
+curl -sS http://127.0.0.1:3000/health
+docker stop construction-welcome</code></pre>
+
+      <h3 class="sub-title">16.5 Configure Firewall</h3>
+      <pre><code>sudo systemctl enable --now firewalld
+sudo firewall-cmd --permanent --add-port=6443/tcp
+sudo firewall-cmd --permanent --add-port=10250/tcp
+sudo firewall-cmd --permanent --add-port=8472/udp
+sudo firewall-cmd --permanent --add-port=30080/tcp
+sudo firewall-cmd --reload</code></pre>
+
+      <h3 class="sub-title">16.6 Install K3s</h3>
+      <pre><code>curl -sfL https://get.k3s.io | sh -
+sudo systemctl status k3s --no-pager</code></pre>
+
+      <h3 class="sub-title">16.7 Configure kubectl</h3>
+      <pre><code>mkdir -p ~/.kube
+sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+sudo chown "$(id -u):$(id -g)" ~/.kube/config
+chmod 600 ~/.kube/config
+export KUBECONFIG="$HOME/.kube/config"
+echo 'export KUBECONFIG="$HOME/.kube/config"' >> ~/.bashrc
+kubectl get nodes</code></pre>
+
+      <h3 class="sub-title">16.8 Build & Import Image into K3s</h3>
+      <pre><code>docker build -t construction-node-app:1.0 .
+docker save construction-node-app:1.0 | sudo k3s ctr images import -
+sudo k3s ctr images ls | grep construction-node-app</code></pre>
+
+      <h3 class="sub-title">16.9 Deploy to Kubernetes</h3>
+      <pre><code>kubectl apply -f deployment.yaml -f service.yaml
+kubectl rollout status deployment/construction-app --timeout=120s
+kubectl get pods,svc -l app=construction-mgmt -o wide</code></pre>
+
+      <h3 class="sub-title">16.10 Open the App</h3>
+      <pre><code>curl -sS http://127.0.0.1:30080/health</code></pre>
+      <p>From your laptop: <code>http://ROCKY_SERVER_IP:30080</code></p>
+
+      <h3 class="sub-title">16.11 Maintenance Commands</h3>
+      <table>
+        <thead><tr><th>Task</th><th>Command</th></tr></thead>
+        <tbody>
+          <tr><td>Restart K3s</td><td><code>sudo systemctl restart k3s</code></td></tr>
+          <tr><td>Restart Docker</td><td><code>sudo systemctl restart docker</code></td></tr>
+          <tr><td>App logs</td><td><code>kubectl logs -f deployment/construction-app</code></td></tr>
+          <tr><td>Remove app</td><td><code>kubectl delete -f service.yaml -f deployment.yaml</code></td></tr>
+          <tr><td>Uninstall K3s</td><td><code>/usr/local/bin/k3s-uninstall.sh</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3 class="sub-title">16.13 End-to-End Summary</h3>
+      <pre><code>cd ~/Kubernetes
+docker build -t construction-node-app:1.0 .
+docker save construction-node-app:1.0 | sudo k3s ctr images import -
+kubectl apply -f deployment.yaml -f service.yaml
+kubectl rollout status deployment/construction-app --timeout=120s
+kubectl get pods,svc -l app=construction-mgmt
+curl -sS http://127.0.0.1:30080/health</code></pre>
+    </div>
+
+    <!-- QUICK REFERENCE -->
+    <div class="section">
+      <h2 class="section-title">Quick Reference (Copy-Paste)</h2>
+      <div class="callout warn">
+        <p>Run these commands from the project folder to build, deploy, and access the app.</p>
+      </div>
+      <pre><code>cd "/Users/apple/Downloads/files (1)"
+docker build -t construction-node-app:1.0 .
+kubectl apply -f deployment.yaml -f service.yaml
+kubectl get pods,svc -l app=construction-mgmt
+kubectl port-forward svc/construction-app-svc 8080:80</code></pre>
+      <p>Then open <a href="http://localhost:8080" target="_blank">http://localhost:8080</a></p>
+    </div>
+
+  </main>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <span>IronFrame v1.0 · Kubernetes Demo</span>
+  <span id="footer-pod">Pod: construction-app · Namespace: default</span>
+</footer>
+
+<script>
+  // Inject live pod info from server
+  fetch('/api/info')
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('pod-info').textContent = 'pod: ' + d.host + ' | port: ' + d.port;
+      document.getElementById('footer-pod').textContent = 'Pod: ' + d.host + ' · Namespace: default';
+    })
+    .catch(() => {});
+</script>
+
+</body>
+</html>
